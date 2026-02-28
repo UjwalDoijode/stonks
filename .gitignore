@@ -1,0 +1,27 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*.pyo
+
+# DB
+*.db
+
+# Env
+.env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Data
+data/
+
+# Node
+node_modules/
+dist/
+.cache/
+
+# Docker
+*.log
