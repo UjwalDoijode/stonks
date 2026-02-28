@@ -12,6 +12,7 @@ import {
   runBacktest, fetchBacktestResults, fetchBacktestDetail,
   runAssetBacktest, runRecommendationBacktest,
 } from "../api";
+import { useCapital } from "../App";
 
 const CHART_TOOLTIP = {
   contentStyle: {
@@ -42,14 +43,15 @@ export default function Backtest() {
   // Asset backtest state
   const [assetType, setAssetType] = useState("gold");
   const [assetYears, setAssetYears] = useState(5);
-  const [assetCapital, setAssetCapital] = useState("20000");
+  const { capital: globalCapital } = useCapital();
+  const [assetCapital, setAssetCapital] = useState(String(Math.round(globalCapital)));
   const [assetResult, setAssetResult] = useState(null);
   const [assetLoading, setAssetLoading] = useState(false);
   const [assetError, setAssetError] = useState(null);
 
   // Recommendation backtest state
   const [recYears, setRecYears] = useState(3);
-  const [recCapital, setRecCapital] = useState("20000");
+  const [recCapital, setRecCapital] = useState(String(Math.round(globalCapital)));
   const [recResult, setRecResult] = useState(null);
   const [recLoading, setRecLoading] = useState(false);
   const [recError, setRecError] = useState(null);
@@ -60,7 +62,7 @@ export default function Backtest() {
   const [swingLoading, setSwingLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [swingError, setSwingError] = useState(null);
-  const [form, setForm] = useState({ initial_capital: "20000" });
+  const [form, setForm] = useState({ initial_capital: String(Math.round(globalCapital)) });
 
   useEffect(() => {
     fetchBacktestResults()

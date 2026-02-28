@@ -235,7 +235,7 @@ function ConvictionBadge({ conviction, score }) {
 function CriteriaDots({ count }) {
   return (
     <div className="flex gap-0.5">
-      {[...Array(6)].map((_, i) => (
+      {[...Array(8)].map((_, i) => (
         <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i < count ? "bg-emerald-400" : "bg-gray-700"}`} />
       ))}
     </div>
@@ -553,6 +553,8 @@ function StockTable({ stocks, showReasoning = true, showTargets = true, onStockC
             </>}
             <th className="text-center">Earnings</th>
             <th className="text-right">RSI</th>
+            <th className="text-right">CCI</th>
+            <th className="text-center">ST</th>
             {showReasoning && <th className="text-left min-w-[200px]">Analysis</th>}
           </tr>
         </thead>
@@ -610,6 +612,14 @@ function StockTable({ stocks, showReasoning = true, showTargets = true, onStockC
                 <EarningsBadge momentum={s.earnings_momentum} score={s.earnings_score} />
               </td>
               <td className="text-right font-mono">{s.rsi?.toFixed(1)}</td>
+              <td className="text-right font-mono">{s.cci?.toFixed(0) ?? '—'}</td>
+              <td className="text-center">
+                {s.supertrend_bullish != null ? (
+                  <span className={`text-[10px] font-bold ${s.supertrend_bullish ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {s.supertrend_bullish ? '▲' : '▼'}
+                  </span>
+                ) : '—'}
+              </td>
               {showReasoning && (
                 <td><ReasoningPreview reasoning={s.reasoning} primaryReason={s.primary_reason} /></td>
               )}
@@ -693,6 +703,12 @@ function RecommendedStockCard({ stock, onStockClick }) {
         <EarningsBadge momentum={stock.earnings_momentum} score={stock.earnings_score} />
         <CriteriaDots count={stock.criteria_met} />
         <span className="text-[10px] text-muted font-mono">RSI: {stock.rsi?.toFixed(0)}</span>
+        <span className="text-[10px] text-muted font-mono">CCI: {stock.cci?.toFixed(0) ?? '—'}</span>
+        {stock.supertrend_bullish != null && (
+          <span className={`text-[10px] font-mono font-bold ${stock.supertrend_bullish ? 'text-emerald-400' : 'text-red-400'}`}>
+            ST {stock.supertrend_bullish ? '▲' : '▼'}
+          </span>
+        )}
         {stock.risk_warning && (
           <span className="text-[10px] text-amber-400 flex items-center gap-0.5">
             <AlertTriangle size={10} /> {stock.risk_warning}

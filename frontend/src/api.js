@@ -105,3 +105,8 @@ export const fetchGovernorStatus = () => request("/governor-status");
 export const fetchMonteCarlo = () => request("/monte-carlo");
 export const fetchFeedbackStats = () => request("/feedback-stats");
 export const fetchSmartCash = () => request("/smart-cash");
+
+// Capital
+export const fetchCapital = () => request("/capital");
+export const updateCapital = (capital) =>
+  request("/capital", { method: "PUT", body: JSON.stringify({ capital }) });

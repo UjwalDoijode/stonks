@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, Loader, ErrorMsg } from "../components/UI";
 import { fetchSmartAdvice } from "../api";
+import { useCapital } from "../App";
 import {
   Sparkles, TrendingUp, TrendingDown, Shield, AlertTriangle,
   DollarSign, Target, ArrowRight, Coins, Landmark, PiggyBank,
@@ -169,7 +170,8 @@ function AllocationRing({ breakdown }) {
    Smart Advisor Page
    ═══════════════════════════════════════════════════════ */
 export default function Advisor() {
-  const [capital, setCapital] = useState("");
+  const { capital: globalCapital } = useCapital();
+  const [capital, setCapital] = useState(String(Math.round(globalCapital)));
   const [advice, setAdvice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

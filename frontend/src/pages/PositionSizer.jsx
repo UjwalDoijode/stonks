@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Card, StatCard, ErrorMsg } from "../components/UI";
 import { calcPositionSize } from "../api";
+import { useCapital } from "../App";
 
 export default function PositionSizer() {
+  const { capital: globalCapital } = useCapital();
   const [form, setForm] = useState({
-    capital: "20000",
+    capital: String(Math.round(globalCapital)),
     entry_price: "",
     stop_loss: "",
     risk_pct: "1.5",

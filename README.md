@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/LightGBM-ML-green" alt="ML">
 </p>
 
-> **Capital Target**: Designed for ₹20,000 initial capital with intelligent position sizing.
+> **Capital Target**: Configurable starting capital (default ₹20,000) — editable live from the sidebar.
 
 ---
 
@@ -40,8 +40,8 @@
 
 ### 📊 Expert Stock Scanner
 - Scans the **NIFTY 500** universe for pullback-to-20DMA swing setups
-- 6-criteria signal engine: 200 DMA trend, 20 DMA proximity, RSI range, volume confirmation, ADR filter, risk/reward
-- AI-powered recommendations: **RECOMMENDED / BUY / HOLD / AVOID** with conviction scores
+- **8-criteria signal engine**: 200 DMA trend, 50 DMA slope, 20 DMA proximity, RSI zone, volume contraction, entry trigger, **CCI momentum zone**, **Supertrend direction**
+- AI-powered recommendations: **RECOMMENDED / BUY / HOLD / AVOID** with conviction scores (0–100)
 - Per-stock trade intelligence: entry price, stop-loss, target, R:R ratio, expected P&L
 
 ### 🌍 Geopolitical & Macro Risk Intelligence
@@ -85,7 +85,12 @@
 - **ETFs**: Gold ETF (GOLDBEES), Silver ETF (SILVERBEES)
 - **Macro**: India CPI Inflation
 
-### 🔥 Additional Features
+### � Dynamic Capital
+- **Editable capital** — click the capital display in the sidebar to change it on the fly
+- All pages (Position Sizer, Backtest, Advisor, P&L calculator) update automatically
+- Persisted in localStorage and synced to the backend
+
+### �🔥 Additional Features
 - **Investment Advisor** — AI-generated buy/sell/hold actions for any capital amount
 - **Sector Heatmap** — GICS sector performance visualisation
 - **Watchlist** — Track favourite stocks with live prices
@@ -237,7 +242,7 @@ stonks/
 │   │   │   ├── advisor.py         # AI investment advisor
 │   │   │   └── risk_overview.py   # Unified risk control dashboard
 │   │   └── strategy/
-│   │       ├── signals.py         # 6-criteria pullback signal engine
+│   │       ├── signals.py         # 8-criteria pullback signal engine (RSI, CCI, Supertrend…)
 │   │       ├── market_intelligence.py  # Expert analysis & recommendations
 │   │       ├── news_intelligence.py    # RSS geo-risk scoring
 │   │       ├── ai_risk_model.py   # LightGBM/XGBoost ensemble
@@ -255,7 +260,7 @@ stonks/
 │   │       ├── monte_carlo.py     # Forward simulation (Part 7)
 │   │       ├── smart_cash.py      # Idle cash optimisation (Part 8)
 │   │       ├── macro_data.py      # Macro indicator fetching
-│   │       ├── indicators.py      # Technical indicators (RSI, MACD, BB)
+│   │       ├── indicators.py      # Technical indicators (RSI, CCI, Supertrend, MACD, BB)
 │   │       ├── backtester.py      # Swing trade backtester
 │   │       ├── asset_backtester.py     # Asset class backtesting
 │   │       ├── allocation_backtester.py # Allocation strategy backtest
@@ -266,7 +271,7 @@ stonks/
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx                # Router & page layout
+│   │   ├── App.jsx                # Router, layout & CapitalContext provider
 │   │   ├── api.js                 # Backend API client (~30 endpoints)
 │   │   ├── main.jsx               # React entry
 │   │   ├── index.css              # Tailwind + custom glass-morphism theme
@@ -354,6 +359,8 @@ stonks/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/advisor/recommend?capital=` | AI-generated investment recommendations |
+| GET | `/api/capital` | Get current capital setting |
+| PUT | `/api/capital` | Update capital (min ₹1,000) |
 
 ---
 
@@ -431,7 +438,7 @@ Key settings in `backend/app/config.py` (all overridable via `.env`):
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `INITIAL_CAPITAL` | ₹20,000 | Starting capital |
+| `INITIAL_CAPITAL` | ₹20,000 | Starting capital (editable from sidebar) |
 | `RISK_PER_TRADE_PCT` | 1.5% | Max risk per trade |
 | `MAX_SIMULTANEOUS_TRADES` | 3 | Max concurrent positions |
 | `TARGET_R_MULTIPLE` | 2.0 | Risk-reward target |

@@ -23,6 +23,8 @@ class Signal:
     dma_20: float
     rsi: float
     volume_ratio: float
+    cci: float = 0.0
+    supertrend: float = 0.0
 
     # Individual flags
     above_200dma: bool = False
@@ -31,6 +33,8 @@ class Signal:
     rsi_in_zone: bool = False
     volume_contracting: bool = False
     entry_triggered: bool = False
+    cci_in_zone: bool = False
+    supertrend_bullish: bool = False
 
     @property
     def flags(self) -> list[bool]:
@@ -41,6 +45,8 @@ class Signal:
             self.rsi_in_zone,
             self.volume_contracting,
             self.entry_triggered,
+            self.cci_in_zone,
+            self.supertrend_bullish,
         ]
 
     @property
@@ -55,9 +61,9 @@ class Signal:
     def recommendation(self) -> str:
         """BUY (green), HOLD (neutral), AVOID (red)."""
         met = self.criteria_met
-        if met >= 5:
+        if met >= 7:
             return "BUY"
-        elif met <= 1:
+        elif met <= 2:
             return "AVOID"
         return "HOLD"
 
@@ -71,11 +77,11 @@ class Signal:
 
         # Header
         if rec == "BUY":
-            parts.append(f"{symbol_clean} meets {met}/6 criteria — strong pullback setup detected.")
+            parts.append(f"{symbol_clean} meets {met}/8 criteria — strong pullback setup detected.")
         elif rec == "AVOID":
-            parts.append(f"{symbol_clean} meets only {met}/6 criteria — setup conditions are weak.")
+            parts.append(f"{symbol_clean} meets only {met}/8 criteria — setup conditions are weak.")
         else:
-            parts.append(f"{symbol_clean} meets {met}/6 criteria — partially formed setup, watch for improvement.")
+            parts.append(f"{symbol_clean} meets {met}/8 criteria — partially formed setup, watch for improvement.")
 
         # Per-criteria reasoning
         if self.above_200dma:
@@ -114,6 +120,21 @@ class Signal:
         else:
             parts.append(f"❌ Entry not yet triggered — waiting for close above ₹{self.entry_price:.2f}.")
 
+        if self.cci_in_zone:
+            parts.append(f"✅ CCI at {self.cci:.0f} — in bullish zone (-50 to +100), momentum building.")
+        else:
+            if self.cci > 100:
+                parts.append(f"❌ CCI at {self.cci:.0f} — overbought (>100), may reverse soon.")
+            elif self.cci < -100:
+                parts.append(f"❌ CCI at {self.cci:.0f} — strong bearish momentum (<-100).")
+            else:
+                parts.append(f"❌ CCI at {self.cci:.0f} — weak zone for swing entry.")
+
+        if self.supertrend_bullish:
+            parts.append(f"✅ Supertrend is BULLISH — price above supertrend line (₹{self.supertrend:.0f}), trend supports longs.")
+        else:
+            parts.append(f"❌ Supertrend is BEARISH — price below supertrend line (₹{self.supertrend:.0f}), trend against longs.")
+
         # Risk-reward summary
         rr = (self.target - self.entry_price) / self.risk_per_share if self.risk_per_share > 0 else 0
         parts.append(f"📊 Entry ₹{self.entry_price:.2f} | Stop ₹{self.stop_loss:.2f} | Target ₹{self.target:.2f} | R:R {rr:.1f}:1")
@@ -143,6 +164,8 @@ def scan_symbol(symbol: str, df: pd.DataFrame) -> Optional[Signal]:
     rsi_in_zone = settings.RSI_LOW <= row["rsi"] <= settings.RSI_HIGH
     volume_contracting = row["volume_ratio"] < 0.8  # below-average volume
     entry_triggered = row["close"] > prev["high"]   # close > prev high
+    cci_in_zone = -50 <= row["cci"] <= 100           # CCI sweet spot for pullback
+    supertrend_bullish = row["supertrend_direction"] == 1  # price above supertrend
 
     # ── Risk calc ────────────────────────────────────────
     entry_price = prev["high"]
@@ -169,12 +192,16 @@ def scan_symbol(symbol: str, df: pd.DataFrame) -> Optional[Signal]:
         dma_20=round(row["dma_20"], 2),
         rsi=round(row["rsi"], 2),
         volume_ratio=round(row["volume_ratio"], 2),
+        cci=round(float(row["cci"]), 2),
+        supertrend=round(float(row["supertrend"]), 2) if not np.isnan(row["supertrend"]) else 0.0,
         above_200dma=above_200dma,
         dma50_trending_up=dma50_trending_up,
         pullback_to_20dma=pullback_to_20dma,
         rsi_in_zone=rsi_in_zone,
         volume_contracting=volume_contracting,
         entry_triggered=entry_triggered,
+        cci_in_zone=cci_in_zone,
+        supertrend_bullish=supertrend_bullish,
     )
 
 

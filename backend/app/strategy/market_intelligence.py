@@ -427,14 +427,14 @@ def generate_expert_recommendation(
     reasons = []
 
     # Technical criteria (max 40 points)
-    tech_score = signal.criteria_met * 6.67  # 6 criteria * 6.67 = ~40
+    tech_score = signal.criteria_met * 5.0  # 8 criteria * 5.0 = 40
     score += tech_score
-    if signal.criteria_met >= 5:
-        reasons.append(f"✅ Strong technical setup — {signal.criteria_met}/6 criteria met")
-    elif signal.criteria_met >= 3:
-        reasons.append(f"📊 Partial setup — {signal.criteria_met}/6 criteria met, watch for improvement")
+    if signal.criteria_met >= 7:
+        reasons.append(f"✅ Strong technical setup — {signal.criteria_met}/8 criteria met")
+    elif signal.criteria_met >= 4:
+        reasons.append(f"📊 Partial setup — {signal.criteria_met}/8 criteria met, watch for improvement")
     else:
-        reasons.append(f"❌ Weak setup — only {signal.criteria_met}/6 criteria")
+        reasons.append(f"❌ Weak setup — only {signal.criteria_met}/8 criteria")
 
     # Trend alignment (max 15 points)
     if signal.above_200dma and signal.dma50_trending_up:
@@ -487,6 +487,25 @@ def generate_expert_recommendation(
     elif signal.rsi < 30:
         score -= 5
         reasons.append(f"⚠️ RSI oversold ({signal.rsi:.0f}) — could be value trap")
+
+    # CCI confirmation (max 8 points)
+    if hasattr(signal, 'cci_in_zone') and signal.cci_in_zone:
+        score += 8
+        reasons.append(f"✅ CCI in bullish zone ({signal.cci:.0f}) — momentum supports entry")
+    elif hasattr(signal, 'cci') and signal.cci > 200:
+        score -= 5
+        reasons.append(f"⚠️ CCI extreme ({signal.cci:.0f}) — overbought risk")
+    elif hasattr(signal, 'cci') and signal.cci < -200:
+        score -= 5
+        reasons.append(f"⚠️ CCI extreme ({signal.cci:.0f}) — heavy selling pressure")
+
+    # Supertrend confirmation (max 8 points)
+    if hasattr(signal, 'supertrend_bullish') and signal.supertrend_bullish:
+        score += 8
+        reasons.append(f"✅ Supertrend BULLISH — trend supports longs")
+    elif hasattr(signal, 'supertrend_bullish'):
+        score -= 5
+        reasons.append(f"⚠️ Supertrend BEARISH — trend against longs")
 
     # R:R Quality (max 5 points)
     if trade_setup.risk_reward_t2 >= 2.0 and trade_setup.risk_pct < 5:

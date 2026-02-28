@@ -3,6 +3,7 @@ import {
   X, TrendingUp, TrendingDown, Target, ShieldAlert, Star, StarOff,
   Award, BarChart3, AlertTriangle, Crosshair, Shield,
 } from "lucide-react";
+import { useCapital } from "../App";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { fetchStockDetail, addToWatchlist, removeFromWatchlist } from "../api";
 import { Loader, ErrorMsg } from "./UI";
@@ -87,6 +88,7 @@ function RecommendationBanner({ stock }) {
 }
 
 export default function StockDetailModal({ symbol, onClose, watchlist = [], onWatchlistChange }) {
+  const { capital: capitalAmount } = useCapital();
   const [stock, setStock] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -349,7 +351,7 @@ export default function StockDetailModal({ symbol, onClose, watchlist = [], onWa
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <h4 className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <Target size={12} className="text-blue-400" /> Signal Criteria ({stock.criteria_met}/6)
+                      <Target size={12} className="text-blue-400" /> Signal Criteria ({stock.criteria_met}/8)
                     </h4>
                     <CriteriaRow label="Above 200-DMA" passed={stock.above_200dma} detail={`₹${stock.dma_200?.toFixed(0)}`} />
                     <CriteriaRow label="50-DMA Trending Up" passed={stock.dma50_trending_up} detail={`₹${stock.dma_50?.toFixed(0)}`} />
@@ -357,15 +359,17 @@ export default function StockDetailModal({ symbol, onClose, watchlist = [], onWa
                     <CriteriaRow label="RSI in Zone (40-65)" passed={stock.rsi_in_zone} detail={stock.rsi?.toFixed(1)} />
                     <CriteriaRow label="Volume Contracting" passed={stock.volume_contracting} detail={`${stock.volume_ratio?.toFixed(2)}x`} />
                     <CriteriaRow label="Entry Triggered" passed={stock.entry_triggered} detail={`₹${stock.entry_price?.toFixed(0)}`} />
+                    <CriteriaRow label="CCI in Zone (-50–100)" passed={stock.cci_in_zone} detail={stock.cci?.toFixed(0)} />
+                    <CriteriaRow label="Supertrend Bullish" passed={stock.supertrend_bullish} detail={stock.supertrend ? `₹${stock.supertrend?.toFixed(0)}` : '—'} />
                   </div>
 
                   {/* Quick P&L Calculator */}
                   <div className="space-y-3">
                     <h4 className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <ShieldAlert size={12} className="text-blue-400" /> Potential P&L (per ₹20K)
+                      <ShieldAlert size={12} className="text-blue-400" /> Potential P&L (per ₹{Math.round(capitalAmount / 1000)}K)
                     </h4>
                     {stock.entry_price && stock.risk_pct > 0 && (() => {
-                      const capital = 20000;
+                      const capital = capitalAmount;
                       const qty = Math.floor(capital / stock.entry_price);
                       const invested = qty * stock.entry_price;
                       const lossAmt = qty * (stock.entry_price - (stock.stop_loss || stock.stop_loss_price || stock.entry_price * 0.95));

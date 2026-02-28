@@ -130,6 +130,21 @@ app.include_router(advisor.router, prefix="/api")
 app.include_router(risk_overview.router, prefix="/api")
 
 
+@app.get("/api/capital")
+async def get_capital():
+    return {"capital": settings.INITIAL_CAPITAL}
+
+
+@app.put("/api/capital")
+async def set_capital(body: dict):
+    new_capital = float(body.get("capital", settings.INITIAL_CAPITAL))
+    if new_capital < 1000:
+        from fastapi import HTTPException
+        raise HTTPException(400, "Minimum capital is ₹1,000")
+    settings.INITIAL_CAPITAL = new_capital
+    return {"capital": settings.INITIAL_CAPITAL}
+
+
 @app.get("/api/health")
 async def health():
     return {
