@@ -127,7 +127,6 @@
   .pro-table tbody td {
     padding: 10px 12px;
     border-bottom: 1px solid rgba(207, 181, 126, 0.06);
-    font-size: 13px;
     transition: background 0.15s;
     font-family: "IBM Plex Mono", monospace;
     font-size: 12px;

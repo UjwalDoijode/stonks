@@ -24,13 +24,15 @@ const ACTION_COLORS = {
 export default function Geopolitics() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedConflict, setSelectedConflict] = useState(null);
 
   const load = () => {
     setLoading(true);
+    setError(null);
     fetchGeopoliticsOverview()
       .then(setData)
-      .catch(() => {})
+      .catch(err => setError(err.message || "Failed to load"))
       .finally(() => setLoading(false));
   };
 
@@ -46,7 +48,12 @@ export default function Geopolitics() {
     );
   }
 
-  if (!data) return <div className="text-muted text-center py-20">Failed to load geopolitical data</div>;
+  if (!data) return (
+    <div className="text-center py-20">
+      <div className="text-muted font-mono text-sm mb-3">{error || "Failed to load geopolitical data"}</div>
+      <button onClick={load} className="btn-primary text-xs">Retry</button>
+    </div>
+  );
 
   const rc = RISK_COLORS[data.risk_level] || RISK_COLORS.MODERATE;
 

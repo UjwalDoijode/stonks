@@ -927,14 +927,14 @@ export default function Scanner() {
       {results.length > 0 && (
         <div className="flex gap-3 flex-wrap text-xs">
           {[
-            { label: "RECOMMENDED", count: recommendedStocks.length, color: "blue" },
-            { label: "BUY", count: buyStocks.length, color: "emerald" },
-            { label: "HOLD", count: holdStocks.length, color: "gray" },
-            { label: "AVOID", count: avoidStocks.length, color: "red" },
-          ].map(({ label, count, color }) => (
-            <div key={label} className={`flex items-center gap-2 bg-${color}-500/10 border border-${color}-500/20 rounded-lg px-3 py-1.5`}>
-              <span className={`w-2 h-2 rounded-full bg-${color}-400`} />
-              <span className={`text-${color}-400 font-semibold font-mono`}>{count}</span>
+            { label: "RECOMMENDED", count: recommendedStocks.length, bg: "bg-blue-500/10", border: "border-blue-500/20", dot: "bg-blue-400", text: "text-blue-400" },
+            { label: "BUY", count: buyStocks.length, bg: "bg-emerald-500/10", border: "border-emerald-500/20", dot: "bg-emerald-400", text: "text-emerald-400" },
+            { label: "HOLD", count: holdStocks.length, bg: "bg-gray-500/10", border: "border-gray-500/20", dot: "bg-gray-400", text: "text-gray-400" },
+            { label: "AVOID", count: avoidStocks.length, bg: "bg-red-500/10", border: "border-red-500/20", dot: "bg-red-400", text: "text-red-400" },
+          ].map(({ label, count, bg, border, dot, text }) => (
+            <div key={label} className={`flex items-center gap-2 ${bg} border ${border} rounded-lg px-3 py-1.5`}>
+              <span className={`w-2 h-2 rounded-full ${dot}`} />
+              <span className={`${text} font-semibold font-mono`}>{count}</span>
               <span className="text-muted">{label}</span>
             </div>
           ))}

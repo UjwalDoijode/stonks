@@ -44,7 +44,7 @@ async def _scheduled_volatility_update():
     """Background job: update volatility metrics cache."""
     try:
         from app.strategy.volatility_targeting import compute_volatility_scaling
-        vol = compute_volatility_scaling(equity_pct=50.0)
+        vol = compute_volatility_scaling(current_equity_pct=50.0)
         logger.info(
             f"Scheduled vol update: portfolio_vol={vol.portfolio_vol:.1f}%, "
             f"scaling_factor={vol.scaling_factor:.2f}"
@@ -113,7 +113,6 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:5175",
-        "https://*.github.io",
     ],
     allow_origin_regex=r"https://.*\.github\.io",
     allow_credentials=True,

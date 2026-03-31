@@ -301,8 +301,8 @@ async def get_stock_detail(symbol: str):
             })
         elif sig:
             result.update({
-                "recommendation": sig.recommendation,
-                "reasoning": sig.reasoning,
+                "recommendation": getattr(sig, 'recommendation', 'HOLD'),
+                "reasoning": getattr(sig, 'reasoning', ''),
             })
 
         return result

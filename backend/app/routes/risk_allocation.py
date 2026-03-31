@@ -33,8 +33,8 @@ async def get_risk_score(db: AsyncSession = Depends(get_db)):
         from app.strategy.macro_data import get_macro_snapshot
         from app.strategy.risk_engine import compute_risk_score
 
-        macro = get_macro_snapshot()
-        risk = compute_risk_score(macro)
+        macro = await asyncio.to_thread(get_macro_snapshot)
+        risk = await asyncio.to_thread(compute_risk_score, macro)
 
         # Persist
         row = RiskScore(
@@ -85,8 +85,8 @@ async def get_allocation(db: AsyncSession = Depends(get_db)):
         from app.strategy.risk_engine import compute_risk_score
         from app.strategy.allocation_engine import compute_allocation
 
-        macro = get_macro_snapshot()
-        risk = compute_risk_score(macro)
+        macro = await asyncio.to_thread(get_macro_snapshot)
+        risk = await asyncio.to_thread(compute_risk_score, macro)
         capital = await get_current_capital(db)
 
         # Get previous regime
@@ -159,7 +159,7 @@ async def get_macro_status():
     try:
         from app.strategy.macro_data import get_macro_snapshot
 
-        macro = get_macro_snapshot()
+        macro = await asyncio.to_thread(get_macro_snapshot)
         return MacroStatusOut(
             nifty_close=macro.get("nifty_close"),
             nifty_200dma=macro.get("nifty_200dma"),

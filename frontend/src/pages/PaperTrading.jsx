@@ -20,7 +20,7 @@ export default function PaperTrading() {
     setLoading(true);
     fetchPaperPortfolio()
       .then(setPortfolio)
-      .catch(() => {})
+      .catch(err => console.warn("Paper portfolio load:", err))
       .finally(() => setLoading(false));
   };
 
@@ -52,7 +52,7 @@ export default function PaperTrading() {
       setSearching(true);
       try {
         const res = await searchStocks(q);
-        setSearchResults(res.results || []);
+        setSearchResults(Array.isArray(res) ? res : (res.results || []));
       } catch {
         setSearchResults([]);
       } finally {

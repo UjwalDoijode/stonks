@@ -107,7 +107,7 @@ async def dashboard(db: AsyncSession = Depends(get_db)):
     else:
         scans = []
 
-    regime = get_nifty_regime_info()
+    regime = await asyncio.to_thread(get_nifty_regime_info)
 
     # Fetch risk / allocation / macro / deployment / AI data (non-blocking — graceful fallback)
     risk_out = None

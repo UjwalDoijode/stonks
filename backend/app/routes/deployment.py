@@ -152,9 +152,9 @@ async def get_ai_risk_probability(db: AsyncSession = Depends(get_db)):
         from app.strategy.risk_engine import compute_risk_score
         from app.strategy.ai_risk_model import predict_risk, blend_risk_scores
 
-        macro = get_macro_snapshot()
-        risk = compute_risk_score(macro)
-        ai_pred = predict_risk(macro)
+        macro = await asyncio.to_thread(get_macro_snapshot)
+        risk = await asyncio.to_thread(compute_risk_score, macro)
+        ai_pred = await asyncio.to_thread(predict_risk, macro)
         blended = blend_risk_scores(risk.total_risk_score, ai_pred)
 
         # Persist

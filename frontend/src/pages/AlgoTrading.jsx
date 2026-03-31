@@ -32,7 +32,7 @@ export default function AlgoTrading() {
   const [expandedAlgo, setExpandedAlgo] = useState(null);
   const [capital, setCapital] = useState(100000);
   const [symbol, setSymbol] = useState("^NSEI");
-  const [period, setPeriod] = useState("1y");
+  const [period, setPeriod] = useState("3y");
   const [backtestResult, setBacktestResult] = useState(null);
   const [comparison, setComparison] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -101,7 +101,8 @@ export default function AlgoTrading() {
             <input
               type="text"
               value={symbol}
-              onChange={e => setSymbol(e.target.value)}
+              onChange={e => setSymbol(e.target.value.toUpperCase())}
+              placeholder="^NSEI, RELIANCE, TCS..."
               className="w-full mt-1 bg-surface border border-gold/20 rounded px-3 py-2 text-sm font-mono text-gold-bright outline-none focus:border-gold/40"
             />
           </div>
@@ -273,6 +274,12 @@ export default function AlgoTrading() {
             </div>
           ) : backtestResult ? (
             <>
+              {/* No trades message */}
+              {backtestResult.message && backtestResult.total_trades === 0 && (
+                <div className="glass-card p-6 text-center border border-gold/20">
+                  <div className="text-gold font-mono text-sm">{backtestResult.message}</div>
+                </div>
+              )}
               {/* Summary header */}
               <div className="glass-card p-4">
                 <div className="flex items-center justify-between">

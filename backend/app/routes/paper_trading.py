@@ -16,8 +16,6 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.strategy.data_feed import fetch_ohlcv
-
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["paper-trading"])
 
