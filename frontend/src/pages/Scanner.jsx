@@ -745,6 +745,9 @@ export default function Scanner() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(null);
   const refreshRef = useRef(null);
+  const symbolsRef = useRef("");
+
+  const [scanCount, setScanCount] = useState(0);
 
   // Initial load
   useEffect(() => {
@@ -760,12 +763,14 @@ export default function Scanner() {
     ])
       .then(([scans, reg, sent, geo, sec, wl, comm]) => {
         setResults(scans);
+        symbolsRef.current = [...new Set(scans.map((r) => r.symbol))].join(",");
         setRegime(reg);
         setSentiment(sent);
         setGeoRisk(geo);
         setSectors(sec);
         setWatchlist(wl);
         setCommodities(comm);
+        setScanCount((c) => c + 1);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -774,30 +779,38 @@ export default function Scanner() {
   // Live price auto-refresh
   const refreshLivePrices = useCallback(async () => {
     try {
-      const topSymbols = [...new Set(
-        results
-          .filter((r) => r.recommendation === "RECOMMENDED" || r.recommendation === "BUY")
-          .map((r) => r.symbol)
-      )].join(",");
-      if (topSymbols) {
-        const prices = await fetchLivePrices(topSymbols);
-        setLivePrices(prices);
-        setLastRefresh(new Date().toLocaleTimeString());
+      const allSymbols = symbolsRef.current;
+      if (!allSymbols) return;
+      const prices = await fetchLivePrices(allSymbols);
+      setLivePrices(prices);
+      setLastRefresh(new Date().toLocaleTimeString());
+
+      // Merge live prices back into results so cards/tables update
+      if (prices.length > 0) {
+        const priceMap = {};
+        for (const p of prices) priceMap[p.symbol] = p;
+        setResults((prev) =>
+          prev.map((r) => {
+            const lp = priceMap[r.symbol];
+            if (lp) return { ...r, price: lp.price, change_pct: lp.change_pct };
+            return r;
+          })
+        );
       }
     } catch { /* silently ignore */ }
-  }, [results]);
+  }, []);
 
   useEffect(() => {
-    if (results.length > 0) refreshLivePrices();
-  }, [results, refreshLivePrices]);
+    if (scanCount > 0) refreshLivePrices();
+  }, [scanCount, refreshLivePrices]);
 
   useEffect(() => {
-    if (autoRefresh && results.length > 0) {
+    if (autoRefresh && scanCount > 0) {
       refreshRef.current = setInterval(refreshLivePrices, 30000);
       return () => clearInterval(refreshRef.current);
     }
     return () => clearInterval(refreshRef.current);
-  }, [autoRefresh, results, refreshLivePrices]);
+  }, [autoRefresh, scanCount, refreshLivePrices]);
 
   const handleScan = async () => {
     setScanning(true);
@@ -812,9 +825,11 @@ export default function Scanner() {
       ]);
       setScanTime(((Date.now() - t0) / 1000).toFixed(1));
       setResults(res);
+      symbolsRef.current = [...new Set(res.map((r) => r.symbol))].join(",");
       setSentiment(sent);
       setGeoRisk(geo);
       setSectors(sec);
+      setScanCount((c) => c + 1);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -855,7 +870,19 @@ export default function Scanner() {
               Geo: {geoRisk.risk_level}
             </Badge>
           )}
+          {lastRefresh && (
+            <span className="text-[10px] text-muted font-mono">Prices: {lastRefresh}</span>
+          )}
           {scanTime && <span className="text-[10px] text-muted font-mono">⚡ {scanTime}s</span>}
+          <button
+            onClick={refreshLivePrices}
+            disabled={results.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted hover:text-emerald-400 hover:bg-emerald-500/10 transition-all border border-border/40 hover:border-emerald-500/20 disabled:opacity-40"
+            title="Refresh live prices for all stocks"
+          >
+            <RefreshCw size={12} />
+            Refresh Prices
+          </button>
           <button onClick={handleScan} disabled={scanning}
             className="btn-primary disabled:opacity-50 flex items-center gap-2">
             {scanning ? (
