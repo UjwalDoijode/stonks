@@ -7,7 +7,8 @@ import {
   StatCard, Card, Badge, Loader, ErrorMsg,
   SkeletonCard, RiskGauge, RegimeBadge, AllocationDonut,
 } from "../components/UI";
-import { fetchDashboard } from "../api";
+import { fetchDashboard, aiMarketBrief } from "../api";
+import { Sparkles, RefreshCw } from "lucide-react";
 
 const CHART_TOOLTIP = {
   contentStyle: {
@@ -25,6 +26,8 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [brief, setBrief] = useState(null);
+  const [briefLoading, setBriefLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboard()
@@ -32,6 +35,14 @@ export default function Dashboard() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  const loadBrief = () => {
+    setBriefLoading(true);
+    aiMarketBrief()
+      .then(setBrief)
+      .catch(() => setBrief({ brief: "Unable to generate AI brief. Check backend connection." }))
+      .finally(() => setBriefLoading(false));
+  };
 
   if (loading) return (
     <div className="space-y-6 animate-fade-in">
@@ -73,6 +84,49 @@ export default function Dashboard() {
           {risk && <RegimeBadge regime={risk.regime} />}
           {ai_risk?.model_available && (
             <Badge variant="purple">AI: {ai_risk.confidence > 0.5 ? "High" : "Low"} Conf</Badge>
+          )}
+        </div>
+      </div>
+
+      {/* ── AI Morning Brief ── */}
+      <div className="glass-card overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gold/10">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-gold" />
+            <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] text-gold font-mono">AI Market Brief</h3>
+          </div>
+          <button
+            onClick={loadBrief}
+            disabled={briefLoading}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold text-gold/70 hover:text-gold hover:bg-gold/10 transition-all font-mono disabled:opacity-40"
+          >
+            <RefreshCw size={11} className={briefLoading ? "animate-spin" : ""} />
+            {brief ? "Refresh" : "Generate"}
+          </button>
+        </div>
+        <div className="p-5">
+          {brief ? (
+            <div className="text-[13px] text-gray-300 leading-relaxed ai-markdown space-y-1.5">
+              {brief.brief.split("\n").map((line, i) => {
+                if (line.startsWith("### "))
+                  return <h4 key={i} className="text-gold font-semibold text-sm mt-2 mb-0.5">{line.slice(4)}</h4>;
+                if (line.startsWith("- ") || line.startsWith("* "))
+                  return <div key={i} className="flex gap-2 pl-1"><span className="text-gold/40">•</span><span dangerouslySetInnerHTML={{ __html: line.slice(2).replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-100">$1</strong>') }} /></div>;
+                if (line.trim() === "") return <div key={i} className="h-1" />;
+                return <p key={i} dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-100">$1</strong>') }} />;
+              })}
+            </div>
+          ) : briefLoading ? (
+            <div className="flex items-center gap-2 py-4 justify-center">
+              <div className="flex gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+              </div>
+              <span className="text-[11px] text-muted font-mono">Generating market intelligence...</span>
+            </div>
+          ) : (
+            <p className="text-center text-muted text-sm py-3">Click "Generate" for an AI-powered market brief with live data</p>
           )}
         </div>
       </div>

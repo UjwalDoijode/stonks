@@ -274,6 +274,27 @@ export default function Advisor() {
       {/* Results */}
       {advice && (
         <div className="space-y-5 animate-fade-in">
+          {/* AI Insight */}
+          {advice.ai_insight && (
+            <div className="glass-card p-5 border-purple-500/20">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-1.5 rounded-lg bg-purple-500/15">
+                  <Sparkles size={14} className="text-purple-400" />
+                </div>
+                <h3 className="text-sm font-bold text-purple-300">AI Analysis</h3>
+                <span className="text-[9px] font-mono text-muted bg-surface-2 px-2 py-0.5 rounded">Gemini</span>
+              </div>
+              <div className="text-[13px] text-gray-300 leading-relaxed ai-markdown">
+                {advice.ai_insight.split("\n").map((line, i) => {
+                  if (line.trim() === "") return <div key={i} className="h-1" />;
+                  if (line.startsWith("- ") || line.startsWith("* "))
+                    return <div key={i} className="flex gap-2 ml-1"><span className="text-purple-400/50">•</span><span dangerouslySetInnerHTML={{ __html: line.slice(2).replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-100">$1</strong>') }} /></div>;
+                  return <p key={i} dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-100">$1</strong>') }} />;
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Summary Banner */}
           <div className="glass-card p-5 border-blue-500/20">
             <div className="flex items-center gap-3 mb-3">

@@ -130,3 +130,14 @@ export const runAlgoBacktest = (data) =>
   request("/algos/backtest", { method: "POST", body: JSON.stringify(data) });
 export const compareAlgorithms = (symbol = "^NSEI", capital = 100000, period = "1y") =>
   request(`/algos/compare?symbol=${encodeURIComponent(symbol)}&capital=${capital}&period=${period}`, { method: "POST" });
+
+// AI Assistant
+export const aiChat = (data) =>
+  request("/ai/chat", { method: "POST", body: JSON.stringify(data) });
+export const aiAnalyze = (data) =>
+  request("/ai/analyze", { method: "POST", body: JSON.stringify(data) });
+export const aiMarketBrief = () => request("/ai/brief");
+
+// News
+export const fetchNews = () => request("/news");
+export const fetchNewsAISummary = () => request("/news/ai-summary");

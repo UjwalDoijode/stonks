@@ -7,9 +7,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { fetchAlgorithms, runAlgoBacktest, compareAlgorithms } from "../api";
 
 const PERIODS = [
-  { value: "1d", label: "1D" },
-  { value: "3d", label: "3D" },
-  { value: "1w", label: "1W" },
   { value: "1m", label: "1M" },
   { value: "3m", label: "3M" },
   { value: "6m", label: "6M" },
@@ -19,11 +16,12 @@ const PERIODS = [
 ];
 
 const ALGO_ICONS = {
-  rsi2_mean_reversion: "&#x21C4;",
-  dual_momentum: "&#x2191;&#x2193;",
-  turtle_breakout: "&#x1F422;",
-  macd_rsi_crossover: "&#x2A2F;",
-  bollinger_mean_reversion: "&#x2248;",
+  trend_pullback_master: "&#x1F3AF;",
+  buy_the_dip: "&#x1F4C9;",
+  three_down_reversal: "&#x1F504;",
+  momentum_breakout_pro: "&#x1F680;",
+  bear_market_short: "&#x1F43B;",
+  adaptive_regime: "&#x2699;",
 };
 
 export default function AlgoTrading() {
@@ -44,6 +42,13 @@ export default function AlgoTrading() {
       .then(d => setAlgos(d.algorithms || {}))
       .catch(() => {});
   }, []);
+
+  // Auto-refresh comparison when period/symbol changes
+  useEffect(() => {
+    if (tab === "compare" && comparison) {
+      runComparison();
+    }
+  }, [period, symbol]);
 
   const runBacktest = async (algoId) => {
     setLoading(true);
@@ -442,16 +447,16 @@ export default function AlgoTrading() {
                               </div>
                             </td>
                             <td className={(r.total_return_pct || 0) >= 0 ? "text-matrix font-semibold" : "text-danger font-semibold"}>
-                              {r.error ? "Error" : `${r.total_return_pct >= 0 ? "+" : ""}${r.total_return_pct}%`}
+                              {r.error ? "Error" : r.total_trades === 0 ? "—" : `${r.total_return_pct >= 0 ? "+" : ""}${r.total_return_pct}%`}
                             </td>
-                            <td>₹{r.final_capital?.toLocaleString("en-IN") || "—"}</td>
-                            <td className={(r.win_rate || 0) >= 50 ? "text-matrix" : "text-danger"}>
-                              {r.win_rate || 0}%
+                            <td>{r.total_trades === 0 ? "—" : `₹${r.final_capital?.toLocaleString("en-IN")}` || "—"}</td>
+                            <td className={(r.win_rate || 0) >= 50 ? "text-matrix" : r.total_trades === 0 ? "text-muted" : "text-danger"}>
+                              {r.total_trades === 0 ? "—" : `${r.win_rate}%`}
                             </td>
-                            <td>{r.total_trades || 0}</td>
-                            <td className="text-danger">{r.max_drawdown_pct || 0}%</td>
-                            <td className={(r.profit_factor || 0) >= 1.5 ? "text-matrix" : "text-gold"}>
-                              {r.profit_factor || 0}
+                            <td className={r.total_trades === 0 ? "text-muted" : ""}>{r.total_trades || 0}</td>
+                            <td className={r.total_trades === 0 ? "text-muted" : "text-danger"}>{r.total_trades === 0 ? "—" : `${r.max_drawdown_pct}%`}</td>
+                            <td className={(r.profit_factor || 0) >= 1.5 ? "text-matrix" : r.total_trades === 0 ? "text-muted" : "text-gold"}>
+                              {r.total_trades === 0 ? "—" : r.profit_factor}
                             </td>
                             <td>
                               <button

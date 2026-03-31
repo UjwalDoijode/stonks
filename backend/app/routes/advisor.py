@@ -230,11 +230,51 @@ async def get_smart_recommendation(
 
         summary = " | ".join(parts)
 
+        # 9. Gemini AI analysis (non-blocking, best-effort)
+        ai_insight = None
+        try:
+            from app.config import settings as cfg
+            if cfg.GEMINI_API_KEY:
+                import httpx
+                stock_list = ", ".join(
+                    f"{r['symbol']} (₹{r['price']}, rank {r['rank_score']:.0f})"
+                    for r in recommendations if r["type"] == "EQUITY"
+                )
+                prompt = (
+                    f"I have ₹{capital:,.0f} to invest in Indian stock market today.\n"
+                    f"Market regime: {plan.regime_label} (risk score {blended:.0f}/100)\n"
+                    f"VIX: {macro.get('vix', 'N/A')}\n"
+                    f"NIFTY: {'Above' if macro.get('nifty_above_200dma') else 'Below'} 200-DMA\n"
+                    f"Geo risk: {geo_risk_level}\n"
+                    f"My system picked these stocks: {stock_list or 'None (regime too risky)'}\n"
+                    f"Allocation: Equity {plan.assets[0].allocation_pct if plan.assets else 0}%, "
+                    f"Gold {next((a.allocation_pct for a in plan.assets if a.asset == 'Gold'), 0)}%, "
+                    f"Cash {next((a.allocation_pct for a in plan.assets if a.asset == 'Cash'), 0)}%\n\n"
+                    "Give me a 100-word sharp assessment: Is this a good time to deploy? "
+                    "Any red flags? What should I watch out for this week? "
+                    "If the stock picks are poor, suggest 2-3 better alternatives from NIFTY 50. "
+                    "Be direct and actionable. Use ₹ for amounts."
+                )
+                gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+                body = {
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                    "systemInstruction": {"parts": [{"text": "You are an expert Indian stock market advisor. Be concise, specific, actionable. No disclaimers."}]},
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 300},
+                }
+                async with httpx.AsyncClient(timeout=30) as client:
+                    resp = await client.post(f"{gemini_url}?key={cfg.GEMINI_API_KEY}", json=body)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    ai_insight = data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e:
+            logger.warning(f"Gemini advisor insight failed: {e}")
+
         return {
             "capital": capital,
             "recommendations": recommendations,
             "risk_context": risk_context,
             "summary": summary,
+            "ai_insight": ai_insight,
             "total_invested": round(total_invested, 2),
             "total_cash": round(cash_amount, 2),
             "allocation_breakdown": {

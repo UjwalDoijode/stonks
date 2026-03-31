@@ -3,24 +3,19 @@ import {
   LayoutDashboard, Search, ArrowLeftRight, Calculator,
   FlaskConical, TrendingUp, PieChart, Crosshair, Star,
   Activity, Sparkles, Shield, Pencil, Check, X,
-  Globe, FileText, Bot,
+  Globe, FileText, Bot, MessageSquare, Newspaper,
 } from "lucide-react";
 
 const NAV = [
   { id: "dashboard",  label: "Dashboard",      icon: LayoutDashboard },
-  { id: "risk",       label: "Risk Control",    icon: Shield },
-  { id: "advisor",    label: "Smart Advisor",   icon: Sparkles },
-  { id: "deployment", label: "Deployment",      icon: Crosshair },
-  { id: "allocation", label: "Allocation",      icon: PieChart },
+  { id: "ai",         label: "AI Assistant",    icon: Sparkles },
   { id: "scanner",    label: "Scanner",         icon: Search },
-  { id: "watchlist",  label: "Watchlist",        icon: Star },
-  { id: "geopolitics",label: "Geopolitics",     icon: Globe },
+  { id: "advisor",    label: "Smart Advisor",   icon: MessageSquare },
+  { id: "risk",       label: "Risk Control",    icon: Shield },
+  { id: "algos",      label: "Algo Lab",        icon: Bot },
   { id: "trades",     label: "Trades",          icon: ArrowLeftRight },
-  { id: "paper",      label: "Paper Trading",   icon: FileText },
-  { id: "algos",      label: "Algo Trading",    icon: Bot },
-  { id: "sizer",      label: "Position Sizer",  icon: Calculator },
   { id: "backtest",   label: "Backtest",        icon: FlaskConical },
-  { id: "compounder", label: "Compounder",      icon: TrendingUp },
+  { id: "news",       label: "News",            icon: Newspaper },
 ];
 
 export default function Sidebar({ active, onNavigate, capital, setCapital }) {

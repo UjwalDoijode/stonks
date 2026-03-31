@@ -3,17 +3,12 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Scanner from "./pages/Scanner";
 import Trades from "./pages/Trades";
-import PositionSizer from "./pages/PositionSizer";
 import Backtest from "./pages/Backtest";
-import Compounder from "./pages/Compounder";
-import Allocation from "./pages/Allocation";
-import Deployment from "./pages/Deployment";
-import Watchlist from "./pages/Watchlist";
 import Advisor from "./pages/Advisor";
 import RiskDashboard from "./pages/RiskDashboard";
-import Geopolitics from "./pages/Geopolitics";
-import PaperTrading from "./pages/PaperTrading";
 import AlgoTrading from "./pages/AlgoTrading";
+import AIChat from "./pages/AIChat";
+import News from "./pages/News";
 import { updateCapital as apiUpdateCapital } from "./api";
 
 export const CapitalContext = createContext({ capital: 20000, setCapital: () => {} });
@@ -21,19 +16,14 @@ export const useCapital = () => useContext(CapitalContext);
 
 const PAGES = {
   dashboard: Dashboard,
-  risk: RiskDashboard,
-  advisor: Advisor,
-  deployment: Deployment,
+  ai: AIChat,
   scanner: Scanner,
-  watchlist: Watchlist,
-  geopolitics: Geopolitics,
-  trades: Trades,
-  paper: PaperTrading,
+  advisor: Advisor,
+  risk: RiskDashboard,
   algos: AlgoTrading,
-  sizer: PositionSizer,
+  trades: Trades,
   backtest: Backtest,
-  compounder: Compounder,
-  allocation: Allocation,
+  news: News,
 };
 
 export default function App() {

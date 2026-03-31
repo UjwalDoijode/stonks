@@ -10,7 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.config import settings
 from app.database import init_db
 from app.routes import scanner, trades, portfolio, backtest, risk_allocation, deployment, advisor
-from app.routes import risk_overview, geopolitics, paper_trading, algo_trading
+from app.routes import risk_overview, geopolitics, paper_trading, algo_trading, ai_chat, news
 
 logging.basicConfig(
     level=logging.INFO,
@@ -132,6 +132,8 @@ app.include_router(risk_overview.router, prefix="/api")
 app.include_router(geopolitics.router)
 app.include_router(paper_trading.router)
 app.include_router(algo_trading.router)
+app.include_router(ai_chat.router)
+app.include_router(news.router)
 
 
 @app.get("/api/capital")
