@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Card, Loader, ErrorMsg } from "../components/UI";
-import { fetchSmartAdvice } from "../api";
+import { fetchSmartAdvice, fetchAIRecommendation } from "../api";
 import { useCapital } from "../App";
 import {
   Sparkles, TrendingUp, TrendingDown, Shield, AlertTriangle,
   DollarSign, Target, ArrowRight, Coins, Landmark, PiggyBank,
-  RefreshCw, ChevronRight, BarChart3, Zap,
+  RefreshCw, ChevronRight, BarChart3, Zap, Bot, Brain,
 } from "lucide-react";
 
 /* ─── Risk Level Badge ───────────────────────────────── */
@@ -173,24 +173,41 @@ export default function Advisor() {
   const { capital: globalCapital } = useCapital();
   const [capital, setCapital] = useState(String(Math.round(globalCapital)));
   const [advice, setAdvice] = useState(null);
+  const [aiRec, setAiRec] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mode, setMode] = useState("ai"); // "ai" or "engine"
 
   const presets = [10000, 20000, 50000, 100000, 250000, 500000];
 
   const handleSubmit = async (amt) => {
     const amount = amt || parseFloat(capital);
     if (!amount || amount <= 0) return;
-    setLoading(true);
     setError(null);
-    setAdvice(null);
-    try {
-      const data = await fetchSmartAdvice(amount);
-      setAdvice(data);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+
+    if (mode === "ai") {
+      setAiLoading(true);
+      setAiRec(null);
+      try {
+        const data = await fetchAIRecommendation(amount);
+        setAiRec(data);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setAiLoading(false);
+      }
+    } else {
+      setLoading(true);
+      setAdvice(null);
+      try {
+        const data = await fetchSmartAdvice(amount);
+        setAdvice(data);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -205,8 +222,31 @@ export default function Advisor() {
           <span className="text-gradient">Smart Money Advisor</span>
         </h2>
         <p className="text-sm text-muted mt-1">
-          Enter your investment amount — get specific stock & ETF recommendations powered by real-time risk, AI, and geopolitics
+          AI-powered stock recommendations with real-time market intelligence
         </p>
+        {/* Mode Toggle */}
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => setMode("ai")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all border ${
+              mode === "ai"
+                ? "bg-purple-500/15 text-purple-300 border-purple-500/30"
+                : "bg-surface-2/30 text-muted border-transparent hover:border-gold/10"
+            }`}
+          >
+            <Brain size={14} /> AI Picks
+          </button>
+          <button
+            onClick={() => setMode("engine")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all border ${
+              mode === "engine"
+                ? "bg-blue-500/15 text-blue-300 border-blue-500/30"
+                : "bg-surface-2/30 text-muted border-transparent hover:border-gold/10"
+            }`}
+          >
+            <Zap size={14} /> Quant Engine
+          </button>
+        </div>
       </div>
 
       {/* Input Section */}
@@ -232,20 +272,21 @@ export default function Advisor() {
           <div className="flex items-end">
             <button
               onClick={() => handleSubmit()}
-              disabled={loading || !capital}
+              disabled={loading || aiLoading || !capital}
               className="btn-primary px-6 py-3 flex items-center gap-2 text-sm font-semibold disabled:opacity-50"
             >
-              {loading ? (
+              {(loading || aiLoading) ? (
                 <>
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Analyzing...
+                  {mode === "ai" ? "AI Thinking..." : "Analyzing..."}
                 </>
               ) : (
                 <>
-                  <Zap size={16} /> Get Recommendations
+                  {mode === "ai" ? <Brain size={16} /> : <Zap size={16} />}
+                  {mode === "ai" ? "Get AI Picks" : "Get Recommendations"}
                 </>
               )}
             </button>
@@ -269,10 +310,59 @@ export default function Advisor() {
       </div>
 
       {error && <ErrorMsg message={error} />}
-      {loading && <Loader />}
+      {(loading || aiLoading) && <Loader />}
 
-      {/* Results */}
-      {advice && (
+      {/* AI Recommendation Result */}
+      {aiRec && mode === "ai" && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="glass-card p-6 border-purple-500/20">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 rounded-lg bg-purple-500/15">
+                <Brain size={18} className="text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-purple-300">AI Investment Plan</h3>
+                <span className="text-[10px] font-mono text-muted">Powered by Gemini · {new Date(aiRec.timestamp).toLocaleString()}</span>
+              </div>
+            </div>
+            <div className="text-[13px] text-gray-300 leading-relaxed ai-markdown space-y-1.5">
+              {aiRec.recommendation.split("\n").map((line, i) => {
+                if (line.startsWith("### "))
+                  return <h4 key={i} className="text-gold font-bold text-sm mt-4 mb-1">{line.slice(4)}</h4>;
+                if (line.startsWith("## "))
+                  return <h3 key={i} className="text-gold-bright font-bold text-base mt-4 mb-1">{line.slice(3)}</h3>;
+                if (line.startsWith("- **") || line.startsWith("* **"))
+                  return (
+                    <div key={i} className="flex gap-2 pl-2 py-0.5">
+                      <span className="text-purple-400/60 mt-0.5">▸</span>
+                      <span dangerouslySetInnerHTML={{ __html: line.slice(2).replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-100">$1</strong>') }} />
+                    </div>
+                  );
+                if (line.startsWith("- ") || line.startsWith("* "))
+                  return (
+                    <div key={i} className="flex gap-2 pl-2 py-0.5">
+                      <span className="text-gray-600">•</span>
+                      <span dangerouslySetInnerHTML={{ __html: line.slice(2).replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-100">$1</strong>') }} />
+                    </div>
+                  );
+                if (line.trim() === "") return <div key={i} className="h-2" />;
+                return <p key={i} dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-100">$1</strong>') }} />;
+              })}
+            </div>
+          </div>
+          {aiRec.market_data && (
+            <div className="glass-card p-4 border-blue-500/10">
+              <h4 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-2 font-mono">Live Market Data Used</h4>
+              <pre className="text-[11px] text-gray-400 font-mono leading-relaxed whitespace-pre-wrap">{aiRec.market_data}</pre>
+            </div>
+          )}
+        </div>
+      )
+
+      }
+
+      {/* Engine Results */}
+      {advice && mode === "engine" && (
         <div className="space-y-5 animate-fade-in">
           {/* AI Insight */}
           {advice.ai_insight && (

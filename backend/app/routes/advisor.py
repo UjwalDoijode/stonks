@@ -291,3 +291,134 @@ async def get_smart_recommendation(
     except Exception as e:
         logger.error(f"Smart advisor error: {e}")
         raise
+
+
+# ─── AI-Powered Recommendation Endpoint ──────────────
+
+
+@router.get("/ai-recommend")
+async def ai_stock_recommendation(
+    capital: float = Query(..., gt=0, description="Amount to invest (₹)"),
+):
+    """
+    Ask Gemini AI directly for stock recommendations,
+    enriched with live NIFTY market data & top-ranked stocks.
+    """
+    import httpx
+    import numpy as np
+    import yfinance as yf
+    from app.config import settings
+
+    if not settings.GEMINI_API_KEY:
+        return {"recommendation": "AI is unavailable — no API key configured.", "market_data": {}}
+
+    # 1. Gather live market context
+    market_context = ""
+    try:
+        def _snapshot():
+            lines = []
+            indices = {"NIFTY 50": "^NSEI", "Bank NIFTY": "^NSEBANK", "SENSEX": "^BSESN"}
+            for name, sym in indices.items():
+                try:
+                    h = yf.Ticker(sym).history(period="5d")
+                    if h is not None and not h.empty:
+                        c = float(h["Close"].iloc[-1])
+                        p = float(h["Close"].iloc[-2]) if len(h) > 1 else c
+                        chg = (c - p) / p * 100
+                        lines.append(f"- {name}: ₹{c:,.2f} ({chg:+.2f}%)")
+                except Exception:
+                    pass
+            try:
+                vix = yf.Ticker("^INDIAVIX").history(period="5d")
+                if vix is not None and not vix.empty:
+                    lines.append(f"- India VIX: {float(vix['Close'].iloc[-1]):.2f}")
+            except Exception:
+                pass
+            return "\n".join(lines)
+        market_context = await asyncio.to_thread(_snapshot)
+    except Exception:
+        market_context = "Market data unavailable."
+
+    # 2. Fetch top-ranked stocks from our engine for AI to evaluate
+    ranked_context = ""
+    try:
+        from app.strategy.stock_ranker import get_top_ranked
+        ranked = await asyncio.to_thread(get_top_ranked, n=15, universe_tier="100")
+        if ranked:
+            parts = []
+            for s in ranked:
+                sym = getattr(s, "symbol", getattr(s, "clean_symbol", "?"))
+                score = getattr(s, "composite_score", getattr(s, "rank_score", 0))
+                price = getattr(s, "price", 0)
+                parts.append(f"{sym} (Score:{score:.0f}, ₹{price:,.0f})")
+            ranked_context = "System-ranked top stocks (by momentum+quality): " + ", ".join(parts)
+    except Exception as e:
+        logger.warning(f"Stock ranker failed: {e}")
+
+    # 3. Ask Gemini
+    prompt = f"""I have ₹{capital:,.0f} to invest in Indian stock market today ({datetime.now().strftime('%B %d, %Y')}).
+
+📈 Live Market Data:
+{market_context or 'Unavailable'}
+
+🏆 System-Ranked Stocks:
+{ranked_context or 'Unavailable'}
+
+Based on current market conditions, give me a SPECIFIC investment plan:
+
+### Market Assessment
+Brief 2-3 line current market view (bullish/bearish/sideways, key drivers)
+
+### Top Stock Picks (3-5 stocks)
+For each stock:
+- **SYMBOL** — Why buy, entry price zone, target, stop-loss
+- Include exact quantity I can buy with my capital (allocate across picks)
+
+### Asset Allocation
+- What % in equities, what % in gold (GOLDBEES), what % cash
+- Be specific with amounts in ₹
+
+### Key Risks & Watchlist
+- 2-3 risks to monitor this week
+- 1-2 stocks to watchlist for future entry
+
+Rules:
+- Only recommend NSE-listed stocks
+- Use ₹ for all amounts
+- Be specific with price levels (entry, target, stop-loss)
+- Consider my capital size for position sizing
+- If market is risky, recommend higher cash allocation
+- You can disagree with the system-ranked stocks if you have better picks
+- No disclaimers — be direct and actionable
+"""
+
+    gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    body = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "systemInstruction": {"parts": [{"text": (
+            "You are STONKS AI — an elite Indian stock market advisor. "
+            "You give specific, actionable stock recommendations with exact price levels. "
+            "You analyze technicals (RSI, moving averages, chart patterns) and fundamentals "
+            "(PE, earnings growth, sector trends). You're direct, confident, and never vague. "
+            f"Today is {datetime.now().strftime('%B %d, %Y')}."
+        )}]},
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048, "topP": 0.9},
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(f"{gemini_url}?key={settings.GEMINI_API_KEY}", json=body)
+        if resp.status_code != 200:
+            logger.error(f"Gemini advisor error {resp.status_code}: {resp.text[:300]}")
+            return {"recommendation": "AI service temporarily unavailable. Please try again.", "market_data": market_context}
+        data = resp.json()
+        text = data["candidates"][0]["content"]["parts"][0]["text"]
+        return {
+            "recommendation": text,
+            "market_data": market_context,
+            "ranked_stocks": ranked_context,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Gemini AI recommend failed: {e}")
+        return {"recommendation": "AI service error. Please try again.", "market_data": market_context}

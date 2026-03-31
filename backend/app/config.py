@@ -60,8 +60,8 @@ class Settings(BaseSettings):
     AI_BLEND_AI_WEIGHT: float = 0.30     # AI weight
     AI_RETRAIN_DAYS: int = 7             # retrain model every N days
 
-    # Gemini AI
-    GEMINI_API_KEY: str = "AIzaSyBMSCxHeG3hj34qR-VtOZtJJgttUD895xA"
+    # Gemini AI (loaded from .env file)
+    GEMINI_API_KEY: str = ""
 
     # Rebalancing
     REBALANCE_DRIFT_THRESHOLD: float = 10.0  # % drift to trigger rebalance

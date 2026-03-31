@@ -98,6 +98,8 @@ export const fetchCommodityPrices = () => request("/scanner/commodities");
 // Smart Money Advisor
 export const fetchSmartAdvice = (capital) =>
   request(`/advisor/recommend?capital=${capital}`);
+export const fetchAIRecommendation = (capital) =>
+  request(`/advisor/ai-recommend?capital=${capital}`);
 
 // Risk Overview (Parts 1-8)
 export const fetchRiskOverview = () => request("/risk-overview");
