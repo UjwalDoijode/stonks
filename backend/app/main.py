@@ -10,7 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.config import settings
 from app.database import init_db
 from app.routes import scanner, trades, portfolio, backtest, risk_allocation, deployment, advisor
-from app.routes import risk_overview
+from app.routes import risk_overview, geopolitics, paper_trading, algo_trading
 
 logging.basicConfig(
     level=logging.INFO,
@@ -113,7 +113,9 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:5175",
+        "https://*.github.io",
     ],
+    allow_origin_regex=r"https://.*\.github\.io",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -128,6 +130,9 @@ app.include_router(risk_allocation.router, prefix="/api")
 app.include_router(deployment.router, prefix="/api")
 app.include_router(advisor.router, prefix="/api")
 app.include_router(risk_overview.router, prefix="/api")
+app.include_router(geopolitics.router)
+app.include_router(paper_trading.router)
+app.include_router(algo_trading.router)
 
 
 @app.get("/api/capital")

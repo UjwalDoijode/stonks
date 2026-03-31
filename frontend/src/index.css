@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,59 +7,100 @@
 @layer base {
   body {
     margin: 0;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #030712;
-    color: #e2e8f0;
+    font-family: "Space Grotesk", "Outfit", system-ui, sans-serif;
+    background: #04060e;
+    color: #c4ccd8;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   /* Selection */
   ::selection {
-    background: rgba(59, 130, 246, 0.3);
-    color: #e2e8f0;
+    background: rgba(207, 181, 126, 0.25);
+    color: #f0e6d3;
+  }
+
+  /* Scanline overlay on body */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 255, 65, 0.008) 2px,
+      rgba(0, 255, 65, 0.008) 4px
+    );
   }
 }
 
 @layer components {
-  /* Glass card effect */
+  /* Glass card — luxury dark with gold accent border */
   .glass-card {
-    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.7));
-    border: 1px solid rgba(30, 41, 59, 0.8);
-    backdrop-filter: blur(12px);
-    border-radius: 12px;
-    transition: all 0.2s ease;
+    background: linear-gradient(145deg, rgba(10, 14, 26, 0.97), rgba(16, 22, 40, 0.85));
+    border: 1px solid rgba(207, 181, 126, 0.12);
+    backdrop-filter: blur(16px);
+    border-radius: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  .glass-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(207, 181, 126, 0.08), transparent 60%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
   .glass-card:hover {
-    border-color: rgba(59, 130, 246, 0.3);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.15);
+    border-color: rgba(207, 181, 126, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(207, 181, 126, 0.1), inset 0 1px 0 rgba(207, 181, 126, 0.05);
+    transform: translateY(-1px);
   }
 
-  /* Stat value with glow */
+  /* Stat value — monospace matrix green tint */
   .stat-value {
-    font-family: "JetBrains Mono", monospace;
+    font-family: "IBM Plex Mono", monospace;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.08);
   }
 
-  /* Pro badge */
+  /* Pro badge — gold accent */
   .pro-badge {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(207, 181, 126, 0.15), rgba(166, 138, 85, 0.1));
+    border: 1px solid rgba(207, 181, 126, 0.25);
+    border-radius: 4px;
     padding: 2px 8px;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    color: #cfb57e;
+    font-family: "IBM Plex Mono", monospace;
   }
 
-  /* Gradient text */
+  /* Gradient text — gold */
   .text-gradient {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(135deg, #cfb57e, #e8d5a8, #a68a55);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* Matrix text — green phosphor glow */
+  .text-matrix {
+    color: #00ff41;
+    text-shadow: 0 0 6px rgba(0, 255, 65, 0.4), 0 0 20px rgba(0, 255, 65, 0.1);
+    font-family: "IBM Plex Mono", monospace;
   }
 
   /* Scrollable table */
@@ -71,25 +112,28 @@
     position: sticky;
     top: 0;
     z-index: 2;
-    background: rgba(17, 24, 39, 0.95);
+    background: rgba(10, 14, 26, 0.98);
     backdrop-filter: blur(8px);
     padding: 10px 12px;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #64748b;
-    border-bottom: 1px solid rgba(30, 41, 59, 0.8);
+    letter-spacing: 0.12em;
+    color: #cfb57e;
+    border-bottom: 1px solid rgba(207, 181, 126, 0.15);
     white-space: nowrap;
+    font-family: "IBM Plex Mono", monospace;
   }
   .pro-table tbody td {
     padding: 10px 12px;
-    border-bottom: 1px solid rgba(30, 41, 59, 0.3);
+    border-bottom: 1px solid rgba(207, 181, 126, 0.06);
     font-size: 13px;
     transition: background 0.15s;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
   }
   .pro-table tbody tr:hover td {
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(207, 181, 126, 0.04);
   }
 
   /* Animated number pill */
@@ -97,57 +141,98 @@
     display: inline-flex;
     align-items: center;
     padding: 2px 8px;
-    border-radius: 4px;
-    font-family: "JetBrains Mono", monospace;
+    border-radius: 3px;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 12px;
     font-weight: 600;
   }
   .number-pill.positive {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
+    background: rgba(0, 255, 65, 0.1);
+    color: #00ff41;
+    text-shadow: 0 0 4px rgba(0, 255, 65, 0.3);
   }
   .number-pill.negative {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
+    background: rgba(255, 50, 50, 0.1);
+    color: #ff3232;
+    text-shadow: 0 0 4px rgba(255, 50, 50, 0.3);
   }
 
-  /* Button styles */
+  /* Button styles — luxury gold */
   .btn-primary {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
+    background: linear-gradient(135deg, #cfb57e, #a68a55);
+    color: #04060e;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 8px 20px;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 12px rgba(207, 181, 126, 0.2);
+    font-family: "Space Grotesk", sans-serif;
+    letter-spacing: 0.02em;
   }
   .btn-primary:hover {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, #e8d5a8, #cfb57e);
+    box-shadow: 0 4px 20px rgba(207, 181, 126, 0.35);
     transform: translateY(-1px);
   }
   .btn-primary:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
     transform: none;
   }
+
+  /* Status indicators */
+  .status-live {
+    animation: statusPulse 2s ease-in-out infinite;
+  }
+  @keyframes statusPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 65, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(0, 255, 65, 0); }
+  }
+
+  /* Terminal cursor blink */
+  .cursor-blink::after {
+    content: "▊";
+    animation: blink 1s step-end infinite;
+    color: #00ff41;
+    font-size: 0.8em;
+    margin-left: 2px;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 5px; height: 5px; }
+/* Scrollbar — thin gold */
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
+::-webkit-scrollbar-thumb { background: rgba(207, 181, 126, 0.2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(207, 181, 126, 0.4); }
 
 /* Recharts tooltip override */
 .recharts-default-tooltip {
-  background: rgba(17, 24, 39, 0.95) !important;
-  border: 1px solid rgba(30, 41, 59, 0.8) !important;
-  border-radius: 8px !important;
-  backdrop-filter: blur(12px) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  background: rgba(10, 14, 26, 0.97) !important;
+  border: 1px solid rgba(207, 181, 126, 0.2) !important;
+  border-radius: 6px !important;
+  backdrop-filter: blur(16px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 12px !important;
+}
+
+/* Custom animations */
+@keyframes matrixRain {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(207, 181, 126, 0.3)); }
+  50% { filter: drop-shadow(0 0 8px rgba(207, 181, 126, 0.6)); }
 }
 

@@ -4,8 +4,8 @@ export function Card({ title, children, className = "", action, noPad = false })
   return (
     <div className={`glass-card animate-fade-in ${className}`}>
       {title && (
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/60">
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">{title}</h3>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gold/10">
+          <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] text-gold font-mono">{title}</h3>
           {action && action}
         </div>
       )}
@@ -29,15 +29,15 @@ export function StatCard({ label, value, sub, color = "text-gray-100", icon }) {
 
 export function Badge({ children, variant = "default" }) {
   const colors = {
-    default: "bg-gray-800/80 text-gray-300 border-gray-700/50",
-    success: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    default: "bg-surface-2 text-gray-300 border-gold/10",
+    success: "bg-matrix/10 text-matrix border-matrix/20",
     danger: "bg-red-500/10 text-red-400 border-red-500/20",
     warning: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    info: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    info: "bg-gold/10 text-gold border-gold/20",
     purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${colors[variant]}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold border font-mono ${colors[variant]}`}>
       {children}
     </span>
   );
@@ -47,10 +47,10 @@ export function Loader() {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3">
       <div className="relative">
-        <div className="w-10 h-10 border-2 border-blue-500/20 rounded-full" />
-        <div className="absolute inset-0 w-10 h-10 border-2 border-transparent border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-10 h-10 border-2 border-gold/20 rounded-full" />
+        <div className="absolute inset-0 w-10 h-10 border-2 border-transparent border-t-gold rounded-full animate-spin" />
       </div>
-      <span className="text-xs text-muted font-medium animate-pulse">Loading...</span>
+      <span className="text-xs text-matrix font-mono animate-pulse">Loading data<span className="cursor-blink"></span></span>
     </div>
   );
 }
@@ -70,7 +70,7 @@ export function ErrorMsg({ message }) {
 
 export function Skeleton({ className = "" }) {
   return (
-    <div className={`bg-gradient-to-r from-gray-800/40 via-gray-700/40 to-gray-800/40 bg-[length:200%_100%] animate-shimmer rounded ${className}`} />
+    <div className={`bg-gradient-to-r from-surface-2/40 via-gold/5 to-surface-2/40 bg-[length:200%_100%] animate-shimmer rounded ${className}`} />
   );
 }
 
@@ -88,11 +88,11 @@ export function SkeletonCard() {
 export function RiskGauge({ score = 0, label = "" }) {
   const angle = (score / 100) * 180 - 90;
   const getColor = (s) => {
-    if (s <= 25) return "#10b981";
-    if (s <= 45) return "#22c55e";
-    if (s <= 65) return "#f59e0b";
-    if (s <= 80) return "#f97316";
-    return "#ef4444";
+    if (s <= 25) return "#00ff41";
+    if (s <= 45) return "#00cc33";
+    if (s <= 65) return "#cfb57e";
+    if (s <= 80) return "#ff9500";
+    return "#ff3232";
   };
   const color = getColor(score);
 
@@ -125,7 +125,7 @@ export function RiskGauge({ score = 0, label = "" }) {
           stroke={color} strokeWidth="2" strokeLinecap="round"
         />
         <circle cx="60" cy="60" r="3" fill={color} />
-        <text x="60" y="55" textAnchor="middle" fill={color} fontSize="16" fontWeight="bold" fontFamily="JetBrains Mono, monospace">
+        <text x="60" y="55" textAnchor="middle" fill={color} fontSize="16" fontWeight="bold" fontFamily="IBM Plex Mono, monospace">
           {score}
         </text>
       </svg>
@@ -157,10 +157,10 @@ export function RegimeBadge({ regime }) {
 export function AllocationDonut({ equity = 0, gold = 0, silver = 0, cash = 0 }) {
   const total = equity + gold + silver + cash || 1;
   const segments = [
-    { label: "Equity", pct: equity, color: "#3b82f6" },
-    { label: "Gold", pct: gold, color: "#f59e0b" },
-    { label: "Silver", pct: silver, color: "#94a3b8" },
-    { label: "Cash", pct: cash, color: "#10b981" },
+    { label: "Equity", pct: equity, color: "#cfb57e" },
+    { label: "Gold", pct: gold, color: "#e8d5a8" },
+    { label: "Silver", pct: silver, color: "#7a8599" },
+    { label: "Cash", pct: cash, color: "#00ff41" },
   ].filter((s) => s.pct > 0);
 
   const radius = 40;
@@ -189,7 +189,7 @@ export function AllocationDonut({ equity = 0, gold = 0, silver = 0, cash = 0 }) 
           );
         })}
         {/* Center text */}
-        <text x="50" y="48" textAnchor="middle" fill="#e2e8f0" fontSize="14" fontWeight="bold" fontFamily="JetBrains Mono, monospace">
+        <text x="50" y="48" textAnchor="middle" fill="#cfb57e" fontSize="14" fontWeight="bold" fontFamily="IBM Plex Mono, monospace">
           {equity}%
         </text>
         <text x="50" y="60" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="500">

@@ -3,6 +3,7 @@ import {
   LayoutDashboard, Search, ArrowLeftRight, Calculator,
   FlaskConical, TrendingUp, PieChart, Crosshair, Star,
   Activity, Sparkles, Shield, Pencil, Check, X,
+  Globe, FileText, Bot,
 } from "lucide-react";
 
 const NAV = [
@@ -13,7 +14,10 @@ const NAV = [
   { id: "allocation", label: "Allocation",      icon: PieChart },
   { id: "scanner",    label: "Scanner",         icon: Search },
   { id: "watchlist",  label: "Watchlist",        icon: Star },
+  { id: "geopolitics",label: "Geopolitics",     icon: Globe },
   { id: "trades",     label: "Trades",          icon: ArrowLeftRight },
+  { id: "paper",      label: "Paper Trading",   icon: FileText },
+  { id: "algos",      label: "Algo Trading",    icon: Bot },
   { id: "sizer",      label: "Position Sizer",  icon: Calculator },
   { id: "backtest",   label: "Backtest",        icon: FlaskConical },
   { id: "compounder", label: "Compounder",      icon: TrendingUp },
@@ -52,41 +56,46 @@ export default function Sidebar({ active, onNavigate, capital, setCapital }) {
   };
 
   return (
-    <aside className="w-60 bg-surface border-r border-border/60 flex flex-col select-none">
+    <aside className="w-60 bg-surface border-r border-gold/10 flex flex-col select-none relative overflow-hidden">
+      {/* Subtle matrix rain background */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+        backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0,255,65,0.03) 20px, rgba(0,255,65,0.03) 21px)`,
+      }} />
+
       {/* Logo */}
-      <div className="px-5 pt-6 pb-4">
+      <div className="px-5 pt-6 pb-4 relative z-10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-glow">
-            <Activity size={16} className="text-white" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center shadow-glow-gold">
+            <Activity size={16} className="text-base" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-white tracking-tight">Stonks</h1>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-muted">Trading Engine</p>
+            <h1 className="text-base font-bold text-gold-bright tracking-tight font-display">STONKS</h1>
+            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-matrix font-mono">Terminal v2.0</p>
           </div>
         </div>
       </div>
 
       {/* Divider */}
-      <div className="mx-4 h-px bg-border/60 mb-2" />
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent mb-2" />
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto relative z-10">
         {NAV.map(({ id, label, icon: Icon }) => {
           const isActive = active === id;
           return (
             <button
               key={id}
               onClick={() => onNavigate(id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-[12px] font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-blue-500/10 text-blue-400 shadow-sm"
-                  : "text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]"
+                  ? "bg-gold/10 text-gold border border-gold/20 shadow-sm"
+                  : "text-muted hover:text-gold-bright hover:bg-gold/[0.04] border border-transparent"
               }`}
             >
-              <Icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
-              <span>{label}</span>
+              <Icon size={15} strokeWidth={isActive ? 2.2 : 1.6} />
+              <span className="font-sans">{label}</span>
               {isActive && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse-slow" />
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-matrix shadow-glow-green status-live" />
               )}
             </button>
           );
@@ -94,12 +103,12 @@ export default function Sidebar({ active, onNavigate, capital, setCapital }) {
       </nav>
 
       {/* Bottom — Editable Capital */}
-      <div className="px-4 py-4 border-t border-border/40">
+      <div className="px-4 py-4 border-t border-gold/10 relative z-10">
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-muted font-medium">Capital</span>
+          <span className="text-muted font-mono uppercase text-[9px] tracking-wider">Capital</span>
           {editing ? (
             <div className="flex items-center gap-1">
-              <span className="text-gray-400 font-mono">₹</span>
+              <span className="text-gold font-mono">₹</span>
               <input
                 ref={inputRef}
                 type="number"
@@ -109,19 +118,19 @@ export default function Sidebar({ active, onNavigate, capital, setCapital }) {
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={confirmEdit}
-                className="w-20 bg-base/80 border border-blue-500/50 rounded px-1.5 py-0.5 text-[11px] font-mono font-semibold text-white outline-none focus:border-blue-400 text-right"
+                className="w-20 bg-base/80 border border-gold/30 rounded px-1.5 py-0.5 text-[11px] font-mono font-semibold text-gold-bright outline-none focus:border-gold text-right"
               />
-              <button onClick={confirmEdit} className="p-0.5 text-emerald-400 hover:text-emerald-300 transition-colors">
+              <button onClick={confirmEdit} className="p-0.5 text-matrix hover:text-matrix transition-colors">
                 <Check size={12} />
               </button>
-              <button onClick={cancelEdit} className="p-0.5 text-red-400 hover:text-red-300 transition-colors">
+              <button onClick={cancelEdit} className="p-0.5 text-danger hover:text-danger transition-colors">
                 <X size={12} />
               </button>
             </div>
           ) : (
             <button
               onClick={startEdit}
-              className="group flex items-center gap-1.5 font-mono font-semibold text-gray-300 hover:text-blue-400 transition-colors cursor-pointer"
+              className="group flex items-center gap-1.5 font-mono font-semibold text-gold hover:text-gold-bright transition-colors cursor-pointer"
               title="Click to edit capital"
             >
               <span>₹{Math.round(capital).toLocaleString("en-IN")}</span>
@@ -129,9 +138,16 @@ export default function Sidebar({ active, onNavigate, capital, setCapital }) {
             </button>
           )}
         </div>
-        <div className="flex items-center justify-between text-[11px] mt-1">
-          <span className="text-muted font-medium">Universe</span>
-          <span className="pro-badge text-blue-400">NIFTY 500</span>
+        <div className="flex items-center justify-between text-[11px] mt-1.5">
+          <span className="text-muted font-mono uppercase text-[9px] tracking-wider">Universe</span>
+          <span className="pro-badge">NIFTY 500</span>
+        </div>
+        <div className="flex items-center justify-between text-[11px] mt-1.5">
+          <span className="text-muted font-mono uppercase text-[9px] tracking-wider">Status</span>
+          <span className="flex items-center gap-1.5 font-mono text-[10px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-matrix status-live" />
+            <span className="text-matrix">ONLINE</span>
+          </span>
         </div>
       </div>
     </aside>

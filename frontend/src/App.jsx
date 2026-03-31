@@ -11,6 +11,9 @@ import Deployment from "./pages/Deployment";
 import Watchlist from "./pages/Watchlist";
 import Advisor from "./pages/Advisor";
 import RiskDashboard from "./pages/RiskDashboard";
+import Geopolitics from "./pages/Geopolitics";
+import PaperTrading from "./pages/PaperTrading";
+import AlgoTrading from "./pages/AlgoTrading";
 import { updateCapital as apiUpdateCapital } from "./api";
 
 export const CapitalContext = createContext({ capital: 20000, setCapital: () => {} });
@@ -23,7 +26,10 @@ const PAGES = {
   deployment: Deployment,
   scanner: Scanner,
   watchlist: Watchlist,
+  geopolitics: Geopolitics,
   trades: Trades,
+  paper: PaperTrading,
+  algos: AlgoTrading,
   sizer: PositionSizer,
   backtest: Backtest,
   compounder: Compounder,

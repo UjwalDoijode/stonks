@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # ── In-memory news cache ──
 _news_cache: dict = {}
-_NEWS_CACHE_TTL = 1800  # 30 minutes
+_NEWS_CACHE_TTL = 600  # 10 minutes
 
 
 # ═══════════════════════════════════════════════════════

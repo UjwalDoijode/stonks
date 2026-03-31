@@ -1,4 +1,4 @@
-const BASE = "/api";
+const BASE = import.meta.env.VITE_API_URL || "/api";
 
 async function request(url, options = {}) {
   const res = await fetch(`${BASE}${url}`, {
@@ -110,3 +110,23 @@ export const fetchSmartCash = () => request("/smart-cash");
 export const fetchCapital = () => request("/capital");
 export const updateCapital = (capital) =>
   request("/capital", { method: "PUT", body: JSON.stringify({ capital }) });
+
+// Geopolitics
+export const fetchGeopoliticsOverview = () => request("/geopolitics/overview");
+export const fetchGeopoliticsConflicts = () => request("/geopolitics/conflicts");
+export const fetchGeopoliticsHeadlines = () => request("/geopolitics/headlines");
+
+// Paper Trading
+export const paperTrade = (data) =>
+  request("/paper/trade", { method: "POST", body: JSON.stringify(data) });
+export const fetchPaperPortfolio = () => request("/paper/portfolio");
+export const resetPaperAccount = (capital = 100000) =>
+  request("/paper/reset", { method: "POST", body: JSON.stringify({ capital }) });
+
+// Algo Trading
+export const fetchAlgorithms = () => request("/algos");
+export const fetchAlgorithm = (algoId) => request(`/algos/${algoId}`);
+export const runAlgoBacktest = (data) =>
+  request("/algos/backtest", { method: "POST", body: JSON.stringify(data) });
+export const compareAlgorithms = (symbol = "^NSEI", capital = 100000, period = "1y") =>
+  request(`/algos/compare?symbol=${encodeURIComponent(symbol)}&capital=${capital}&period=${period}`, { method: "POST" });

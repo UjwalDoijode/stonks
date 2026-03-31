@@ -69,8 +69,8 @@ class Settings(BaseSettings):
     MIN_POSITION_VALUE: float = 500.0  # minimum ₹ position worth trading
 
     # Caching
-    CACHE_TTL_SECONDS: int = 3600  # 1 hour
-    CACHE_OHLCV_DAYS: int = 7  # re-fetch if older than N days
+    CACHE_TTL_SECONDS: int = 900  # 15 minutes
+    CACHE_OHLCV_DAYS: int = 1  # re-fetch if older than 1 day (next market open)
 
     # Scheduler
     SCHEDULER_RISK_CRON: str = "0 9 * * 1-5"   # daily 9 AM IST on weekdays
