@@ -122,19 +122,29 @@ def _calculate_importance(title: str, description: str, category: str) -> int:
     text = f"{title} {description}".lower()
     score = 0
     
-    # War & Geopolitics (40 points)
-    geopolitical_terms = ["war", "conflict", "military", "attack", "invasion", "russia", "ukraine", 
-                          "israel", "palestine", "gaza", "china", "taiwan", "sanction", "embargo",
-                          "nato", "troops", "armed forces", "ceasefire", "peace talks", "diplomat"]
-    if any(term in text for term in geopolitical_terms):
-        score += 40
-        # Add category or create one
-        return score
+    # Check for active war content first (highest priority)
+    war_indicators = [
+        "killed in", "wounded in", "casualties", "death toll", "attack", "bombing", "bombed",
+        "missile strike", "airstrike", "shelling", "offensive", "invasion", "siege",
+        "combat zone", "battlefield"
+    ]
+    if any(term in text for term in war_indicators):
+        score += 60  # War/conflict gets highest importance
+        return min(score, 100)
+    
+    # Geopolitical statements & actions (high priority)
+    geopolitical_indicators = [
+        "statement condemn", "condemned", "diplomatic statement", "government statement",
+        "sanction", "embargo", "peace talks", "negotiation", "bilateral", "treaty",
+        "broke relation", "restore relation"
+    ]
+    if any(term in text for term in geopolitical_indicators):
+        score += 50
     
     # Finance & Markets (30 points)
     financial_terms = ["rbi", "inflationary", "interest rate", "rupee", "crash", "surge", "bull run",
                        "bear market", "ipo", "stock split", "dividend", "earnings", "profit", "revenue",
-                       "ipo", "merger", "acquisition", "nse", "bse", "sensex", "nifty", "circuit breaker"]
+                       "merger", "acquisition", "nse", "bse", "sensex", "nifty", "circuit breaker"]
     if any(term in text for term in financial_terms):
         score += 30
     
@@ -146,7 +156,7 @@ def _calculate_importance(title: str, description: str, category: str) -> int:
     
     # Fed/RBI/Policy (25 points)
     policy_terms = ["federal reserve", "interest rate hike", "rate cut", "monetary policy", "inflation",
-                    "economic growth", "currency", "gold", "oil", "commodity"]
+                    "economic growth", "currency", "gold", "oil", "commodity", "gdp"]
     if any(term in text for term in policy_terms):
         score += 25
     
@@ -164,22 +174,67 @@ def _calculate_importance(title: str, description: str, category: str) -> int:
 
 
 def _categorize_news(title: str, description: str) -> str:
-    """Determine if article is about Geopolitics, War, Finance, etc."""
+    """
+    Determine category: War, Geopolitics, or None (use original).
+    
+    War: Active military conflicts, attacks, combat, casualties
+    Geopolitics: Diplomatic statements, international relations, sanctions, trade talks, agreements
+    """
     text = f"{title} {description}".lower()
     
-    # Check for War & Conflict
-    if any(term in text for term in ["war", "conflict", "armed", "attack", "invasion", "military"]):
-        return "Geopolitics & War"
+    # WAR CONTENT - Real military conflict, attacks, casualties (strict matching)
+    war_indicators = [
+        # Combat & attacks
+        "attack", "attacking", "attacked", "bombing", "bombed", "strikes", "struck",
+        "missile strike", "airstrike", "air strike", "shelling", "artillery",
+        # Military operations
+        "military operation", "offensive", "counter-offensive", "invasion",
+        # Casualties & conflict
+        "killed", "wounded", "casualties", "death toll", "fatalities",
+        # Conflict zones
+        "conflict zone", "battlefield", "combat zone", "armed clash",
+        # Specific active conflicts  
+        "ukraine russia", "russia ukraine", "israel gaza", "gaza israel", "hamas",
+        "hezbollah", "iran war", "strike on", "struck by",
+        # War-specific
+        "siege", "ceasefire", "hostilities", "active conflict"
+    ]
     
-    # Check for Geopolitics
-    if any(term in text for term in ["geopolitical", "diplomat", "sanction", "embargo", "treaty", "ally", "alliance"]):
-        return "Geopolitics & War"
+    if any(term in text for term in war_indicators):
+        return "War"
     
-    # Check for specific conflicts
-    if any(term in text for term in ["ukraine", "russia", "gaza", "israel", "palestine", "china", "taiwan"]):
-        return "Geopolitics & War"
+    # GEOPOLITICS - Diplomatic, statements, international relations
+    geopolitics_indicators = [
+        # Statements & official responses
+        "statement", "said", "told", "declared", "announced", "response",
+        "spokesman", "ministry", "official", "government", "spokesperson",
+        # Diplomatic actions
+        "sanction", "embargo", "diplomat", "diplomatic", "ambassad",
+        # International relations
+        "relation", "relations", "alliance", "partnership", "cooperation", "agreement",
+        "bilateral", "multilateral", "talks", "negotiation", "meeting", "summit",
+        # Trade & economic diplomacy
+        "trade deal", "trade agreement", "trade tension", "export", "tariff", "trade war",
+        # International law & treaties
+        "treaty", "protocol", "accord", "pact", "convention", "un vote",
+        # Borders & territorial  
+        "border", "territorial", "dispute", "claims over",
+        # Major geopolitical contexts
+        "china", "russia", "india", "usa", "europe", "middle east",
+        "southeast asia", "taiwan", "korea", "africa"
+    ]
     
-    # Otherwise return original category
+    # Count matches for geopolitics (need at least 2 to confirm it's geopolitical)
+    geo_matches = sum(1 for term in geopolitics_indicators if term in text)
+    if geo_matches >= 2:  # Multiple geopolitical indicators
+        return "Geopolitics"
+    
+    # Single strong geopolitical indicator
+    strong_geo = ["sanction", "embargo", "diplomatic", "bilateral", "multilateral", "treaty", "accord"]
+    if any(term in text for term in strong_geo):
+        return "Geopolitics"
+    
+    # Default: let original category stand
     return None
 
 

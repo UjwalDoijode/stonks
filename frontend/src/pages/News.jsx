@@ -9,7 +9,8 @@ const CATEGORY_COLORS = {
   "Indian Markets": { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20" },
   "Indian Finance": { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
   "Indian Economy": { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
-  "Geopolitics & War": { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/20" },
+  "War": { bg: "bg-red-600/15", text: "text-red-400", border: "border-red-600/30" },
+  "Geopolitics": { bg: "bg-orange-500/15", text: "text-orange-400", border: "border-orange-500/30" },
   "Global": { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20" },
   "US Markets": { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/20" },
 };
