@@ -51,376 +51,245 @@ export default function RiskDashboard() {
   const { governor, volatility, opportunity, correlation, liquidity, feedback, smart_cash, monte_carlo } = data;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Risk Control Center</h2>
-          <p className="text-xs text-muted mt-0.5 font-medium">
-            Comprehensive risk monitoring &amp; capital protection
+    <div className="space-y-5 animate-fade-in">
+      {/* Simplified Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gold-bright">Risk Control</h1>
+        <p className="text-xs text-muted mt-1">Portfolio safety & drawdown protection</p>
+      </div>
+
+      {/* MAIN: Governor Status (Large & Clear) */}
+      <div className={`glass-card p-6 border-2 ${
+        governor?.severity === "NORMAL" ? "border-emerald-500/40 bg-emerald-500/5" :
+        governor?.severity === "WARNING" ? "border-amber-500/40 bg-amber-500/5" :
+        governor?.severity === "CRITICAL" ? "border-orange-500/40 bg-orange-500/5" :
+        "border-red-600/40 bg-red-600/5"
+      }`}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gold">Risk Governor Status</h2>
+          <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
+            governor?.severity === "NORMAL" ? "bg-emerald-500/20 text-emerald-400" :
+            governor?.severity === "WARNING" ? "bg-amber-500/20 text-amber-400" :
+            governor?.severity === "CRITICAL" ? "bg-orange-500/20 text-orange-400" :
+            "bg-red-600/20 text-red-400"
+          }`}>
+            {governor?.severity || "UNKNOWN"}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center">
+            <p className="text-[11px] text-muted uppercase tracking-wider mb-1">Drawdown</p>
+            <p className={`text-2xl font-bold font-mono ${governor?.drawdown_triggered ? "text-red-400" : "text-emerald-400"}`}>
+              {governor?.drawdown_pct?.toFixed(1) || 0}%
+            </p>
+            <p className="text-[10px] text-muted/60 mt-0.5">Limit: 8%</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[11px] text-muted uppercase tracking-wider mb-1">Losses in a Row</p>
+            <p className={`text-2xl font-bold font-mono ${governor?.consecutive_losses >= 3 ? "text-red-400" : "text-emerald-400"}`}>
+              {governor?.consecutive_losses || 0}
+            </p>
+            <p className="text-[10px] text-muted/60 mt-0.5">Limit: 3</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[11px] text-muted uppercase tracking-wider mb-1">Monthly Loss</p>
+            <p className={`text-2xl font-bold font-mono ${governor?.monthly_loss_triggered ? "text-red-400" : "text-emerald-400"}`}>
+              {governor?.monthly_loss_pct?.toFixed(1) || 0}%
+            </p>
+            <p className="text-[10px] text-muted/60 mt-0.5">Limit: 5%</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[11px] text-muted uppercase tracking-wider mb-1">Emergency Stop</p>
+            <p className={`text-2xl font-bold font-mono ${governor?.hard_stop_triggered ? "text-red-400" : "text-emerald-400"}`}>
+              {governor?.hard_stop_triggered ? "HALT" : "OK"}
+            </p>
+            <p className="text-[10px] text-muted/60 mt-0.5">Limit: 15%</p>
+          </div>
+        </div>
+
+        {governor?.hard_stop_triggered && (
+          <div className="mt-4 p-3 bg-red-600/20 border border-red-600/40 rounded-lg">
+            <p className="text-red-400 text-sm font-bold">🛑 HARD STOP TRIGGERED - All trading paused for safety</p>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Stats (4 essential metrics) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="glass-card p-4">
+          <p className="text-[11px] text-muted uppercase tracking-wider mb-2">Portfolio Volatility</p>
+          <p className={`text-2xl font-bold font-mono ${volatility?.portfolio_vol > volatility?.target_vol * 1.2 ? "text-amber-400" : "text-emerald-400"}`}>
+            {volatility?.portfolio_vol?.toFixed(1)}%
           </p>
+          <p className="text-[10px] text-muted/60 mt-1">Target: {volatility?.target_vol}%</p>
         </div>
-        <Badge variant={governor?.severity === "NORMAL" ? "success" : governor?.severity === "WARNING" ? "warning" : "danger"}>
-          Governor: {governor?.severity || "N/A"}
-        </Badge>
+        
+        <div className="glass-card p-4">
+          <p className="text-[11px] text-muted uppercase tracking-wider mb-2">Equity Allocation</p>
+          <p className={`text-2xl font-bold font-mono ${volatility?.scaling_factor < 0.8 ? "text-amber-400" : "text-emerald-400"}`}>
+            {((volatility?.scaling_factor || 1) * 100).toFixed(0)}%
+          </p>
+          <p className="text-[10px] text-muted/60 mt-1">{volatility?.scaling_factor < 1 ? "Reduced" : "Full"}</p>
+        </div>
+        
+        <div className="glass-card p-4">
+          <p className="text-[11px] text-muted uppercase tracking-wider mb-2">Win Rate</p>
+          <p className={`text-2xl font-bold font-mono ${(feedback?.win_rate || 0) >= 60 ? "text-emerald-400" : "text-amber-400"}`}>
+            {(feedback?.win_rate || 0).toFixed(0)}%
+          </p>
+          <p className="text-[10px] text-muted/60 mt-1">{feedback?.winning_trades || 0}W / {feedback?.losing_trades || 0}L</p>
+        </div>
+
+        <div className="glass-card p-4">
+          <p className="text-[11px] text-muted uppercase tracking-wider mb-2">Cash Available</p>
+          <p className="text-2xl font-bold text-emerald-400 font-mono">
+            ₹{(smart_cash?.total_cash || 0)?.toLocaleString("en-IN")}
+          </p>
+          <p className="text-[10px] text-muted/60 mt-1">{smart_cash?.weighted_annual_yield}% yield</p>
+        </div>
       </div>
 
-      {/* Governor Alert */}
-      {governor?.is_active && (
-        <div className={`glass-card border p-4 flex items-start gap-3 ${SEVERITY_BG[governor.severity] || ""}`}>
-          <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <span className="text-red-400 text-sm font-bold">!</span>
-          </div>
-          <div>
-            <p className={`font-semibold text-sm ${SEVERITY_COLORS[governor.severity]}`}>
-              Risk Governor Active — {governor.severity}
-            </p>
-            <p className="text-muted text-xs mt-1 leading-relaxed">
-              Drawdown: {governor.drawdown_pct.toFixed(1)}% |
-              Consecutive losses: {governor.consecutive_losses} |
-              Monthly loss: {governor.monthly_loss_pct.toFixed(1)}%
-              {governor.hard_stop_triggered && " | HARD STOP TRIGGERED — All equity paused"}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Top Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          label="Portfolio Vol"
-          value={`${volatility?.portfolio_vol?.toFixed(1) || 0}%`}
-          sub={`Target: ${volatility?.target_vol || 12}%`}
-          color={volatility?.portfolio_vol > volatility?.target_vol * 1.2 ? "text-loss" : "text-profit"}
-        />
-        <StatCard
-          label="Vol Scaling"
-          value={`${((volatility?.scaling_factor || 1) * 100).toFixed(0)}%`}
-          sub={volatility?.scaling_factor < 1 ? "Equity reduced" : "Full allocation"}
-          color={volatility?.scaling_factor < 0.8 ? "text-amber-400" : "text-gray-100"}
-        />
-        <StatCard
-          label="Drawdown"
-          value={`${governor?.drawdown_pct?.toFixed(1) || 0}%`}
-          color={governor?.drawdown_triggered ? "text-loss" : "text-gray-100"}
-        />
-        <StatCard
-          label="Win Rate"
-          value={`${feedback?.win_rate?.toFixed(1) || 0}%`}
-          sub={`${feedback?.winning_trades || 0}W / ${feedback?.losing_trades || 0}L`}
-          color={feedback?.win_rate >= 60 ? "text-profit" : "text-amber-400"}
-        />
-      </div>
-
-      {/* Governor + Volatility Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Governor */}
-        <Card title="Portfolio Risk Governor">
-          <div className="space-y-3">
-            {[
-              { label: "Drawdown Check", value: `${governor?.drawdown_pct?.toFixed(1)}%`, triggered: governor?.drawdown_triggered, threshold: "8%" },
-              { label: "Consecutive Losses", value: governor?.consecutive_losses, triggered: governor?.equity_paused, threshold: "3" },
-              { label: "Monthly Loss", value: `${governor?.monthly_loss_pct?.toFixed(1)}%`, triggered: governor?.monthly_loss_triggered, threshold: "5%" },
-              { label: "Hard Stop", value: governor?.hard_stop_triggered ? "TRIGGERED" : "OK", triggered: governor?.hard_stop_triggered, threshold: "15%" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                <div>
-                  <span className="text-xs text-muted">{item.label}</span>
-                  <span className="text-[10px] text-gray-600 ml-2">(limit: {item.threshold})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-mono font-semibold ${item.triggered ? "text-red-400" : "text-emerald-400"}`}>
-                    {item.value}
-                  </span>
-                  <div className={`w-2 h-2 rounded-full ${item.triggered ? "bg-red-400" : "bg-emerald-400"}`} />
-                </div>
+      {/* Volatility Control (Simple) */}
+      <Card title="Volatility Control">
+        <p className="text-xs text-muted mb-4">How volatile the portfolio is vs target</p>
+        <div className="space-y-4">
+          {[
+            { label: "Equity Volatility", value: volatility?.equity_vol, color: "bg-blue-500" },
+            { label: "Gold Volatility", value: volatility?.gold_vol, color: "bg-amber-500" },
+            { label: "Portfolio (Combined)", value: volatility?.portfolio_vol, color: "bg-purple-500" },
+          ].map((item) => (
+            <div key={item.label}>
+              <div className="flex justify-between text-xs mb-2">
+                <span className="font-medium text-gray-300">{item.label}</span>
+                <span className="font-mono text-gray-400">{item.value?.toFixed(1)}%</span>
               </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Volatility */}
-        <Card title="Volatility Targeting">
-          <div className="space-y-4">
-            {[
-              { label: "Equity Vol", value: volatility?.equity_vol, color: "bg-blue-500" },
-              { label: "Gold Vol", value: volatility?.gold_vol, color: "bg-amber-500" },
-              { label: "Portfolio Vol", value: volatility?.portfolio_vol, color: "bg-purple-500" },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-muted">{item.label}</span>
-                  <span className="font-mono text-gray-300">{item.value?.toFixed(1)}%</span>
-                </div>
-                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${item.color}`}
-                    style={{ width: `${Math.min((item.value || 0) / 40 * 100, 100)}%` }}
-                  />
-                </div>
+              <div className="h-2 bg-gray-800/50 rounded-full overflow-hidden border border-gray-700/30">
+                <div className={`h-full rounded-full ${item.color}`} style={{ width: `${Math.min((item.value || 0) / 40 * 100, 100)}%` }} />
               </div>
-            ))}
-            <div className="border-t border-border/40 pt-3 text-xs text-muted">
-              <p>{volatility?.reason}</p>
             </div>
-          </div>
-        </Card>
-      </div>
+          ))}
+        </div>
+        {volatility?.reason && (
+          <p className="text-[11px] text-amber-400 mt-4 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            📌 {volatility.reason}
+          </p>
+        )}
+      </Card>
 
-      {/* Opportunity + Correlation Row */}
+      {/* Opportunity Filter (Simplified) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Opportunity Filter */}
         <Card title="Opportunity Filter">
+          <p className="text-xs text-muted mb-3">Which assets are worth buying right now?</p>
           <div className="space-y-2">
             {opportunity?.scores?.map((s) => (
-              <div key={s.asset} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                <span className="text-xs font-medium text-gray-300">{s.asset}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-muted">
-                    Ret: {s.expected_return?.toFixed(1)}% | DD: {s.max_drawdown?.toFixed(1)}%
-                  </span>
-                  <span className={`font-mono text-sm font-semibold ${s.passes_threshold ? "text-emerald-400" : "text-red-400"}`}>
-                    {s.opportunity_score?.toFixed(2)}
-                  </span>
-                  <div className={`w-2 h-2 rounded-full ${s.passes_threshold ? "bg-emerald-400" : "bg-red-400"}`} />
+              <div key={s.asset} className={`p-3 rounded-lg border ${s.passes_threshold ? "bg-emerald-500/5 border-emerald-500/20" : "bg-red-500/5 border-red-500/20"}`}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-200 uppercase">{s.asset}</p>
+                    <p className="text-xs text-muted mt-0.5">Return: {s.expected_return?.toFixed(1)}% | Risk (DD): {s.max_drawdown?.toFixed(1)}%</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-lg font-bold font-mono ${s.passes_threshold ? "text-emerald-400" : "text-red-400"}`}>
+                      {s.opportunity_score?.toFixed(2)}
+                    </p>
+                    <p className={`text-[10px] font-bold ${s.passes_threshold ? "text-emerald-400" : "text-red-400"}`}>
+                      {s.passes_threshold ? "✓ BUY" : "✗ SKIP"}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
-            {opportunity?.cash_boost_applied && (
-              <div className="mt-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 text-[11px] font-medium">
-                Cash boosted — no asset passed opportunity threshold
-              </div>
-            )}
           </div>
+          {opportunity?.cash_boost_applied && (
+            <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <p className="text-amber-400 text-xs font-bold">💡 No good opportunities → Keep cash earning interest</p>
+            </div>
+          )}
         </Card>
 
-        {/* Correlation Control */}
+        {/* Diversification (Simplified) */}
         {correlation && (
-          <Card title="Correlation & Sector Control">
+          <Card title="Stock Diversification">
+            <p className="text-xs text-muted mb-4">Avoiding correlated stocks & sector overlap</p>
             <div className="space-y-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted">Stocks Analyzed</span>
-                <span className="font-mono text-gray-300">{correlation.original_count}</span>
+              <div className="p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-medium text-gray-300">Initial Universe</span>
+                  <span className="text-lg font-bold text-gray-400 font-mono">{correlation.original_count}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-300">After Filtering</span>
+                  <span className="text-lg font-bold text-emerald-400 font-mono">{correlation.filtered_count}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted">After Filter</span>
-                <span className="font-mono text-emerald-400">{correlation.filtered_count}</span>
-              </div>
+              
               {correlation.removed_symbols?.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-[11px] text-muted mb-1">Removed (correlated/sector limit):</p>
+                <div>
+                  <p className="text-xs font-medium text-red-400 mb-2">Removed (too correlated):</p>
                   <div className="flex flex-wrap gap-1">
-                    {correlation.removed_symbols.map((s) => (
-                      <span key={s} className="px-2 py-0.5 bg-red-500/10 text-red-400 text-[10px] rounded-md border border-red-500/20">
+                    {correlation.removed_symbols.slice(0, 3).map((s) => (
+                      <span key={s} className="px-2 py-1 bg-red-500/10 text-red-400 text-[10px] rounded border border-red-500/20 font-mono">
                         {s}
                       </span>
                     ))}
+                    {correlation.removed_symbols.length > 3 && (
+                      <span className="px-2 py-1 text-red-400 text-[10px] font-bold">
+                        +{correlation.removed_symbols.length - 3} more
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
-              <div className="border-t border-border/40 pt-2 text-xs text-muted">
-                <p>{correlation.reason}</p>
-              </div>
+              
+              <p className="text-[11px] text-gray-400 p-2 bg-gray-800/20 rounded">
+                📊 Diversification Score: <span className="font-bold text-gold">{correlation.diversification_score}/100</span>
+              </p>
             </div>
           </Card>
         )}
       </div>
 
-      {/* Feedback + Smart Cash Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Adaptive Feedback */}
-        <Card title="Adaptive AI Feedback">
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
-              {[
-                ["Total Trades", feedback?.total_trades || 0],
-                ["Avg R-Multiple", feedback?.avg_r_multiple?.toFixed(2) || "—"],
-                ["High Conf WR", `${feedback?.high_conf_win_rate?.toFixed(0) || 0}%`],
-                ["Low Conf WR", `${feedback?.low_conf_win_rate?.toFixed(0) || 0}%`],
-              ].map(([label, val]) => (
-                <div key={label} className="flex justify-between">
-                  <span className="text-muted">{label}</span>
-                  <span className="text-gray-300 font-mono">{val}</span>
+      {/* Smart Cash & Liquidity */}
+      {smart_cash && smart_cash.total_cash > 0 && (
+        <Card title="Smart Cash Allocation">
+          <p className="text-xs text-muted mb-4">How your cash is earning returns safely</p>
+          <div className="space-y-2">
+            {smart_cash.recommendations?.slice(0, 3).map((r, i) => (
+              <div key={i} className="p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
+                <div className="flex justify-between items-start mb-1">
+                  <p className="text-sm font-semibold text-gray-200">{r.name}</p>
+                  <p className="font-mono font-bold text-emerald-400">₹{r.amount?.toLocaleString("en-IN")}</p>
                 </div>
-              ))}
-            </div>
-            <div className="border-t border-border/40 pt-3">
-              <p className="text-[11px] text-muted mb-2">Current Blend Weights</p>
-              <div className="flex gap-2">
-                <div className="flex-1 bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 text-center">
-                  <p className="text-blue-400 font-mono font-bold text-sm">
-                    {((feedback?.current_rule_weight || 0.7) * 100).toFixed(0)}%
-                  </p>
-                  <p className="text-[10px] text-muted mt-0.5">Rule-Based</p>
-                </div>
-                <div className="flex-1 bg-purple-500/10 border border-purple-500/20 rounded-lg p-2 text-center">
-                  <p className="text-purple-400 font-mono font-bold text-sm">
-                    {((feedback?.current_ai_weight || 0.3) * 100).toFixed(0)}%
-                  </p>
-                  <p className="text-[10px] text-muted mt-0.5">AI Model</p>
-                </div>
+                <p className="text-xs text-muted">{r.annual_yield_pct}% p.a. → ₹{r.monthly_yield}/month</p>
               </div>
-              {feedback?.adaptation_active && (
-                <Badge variant="info">Weights adapted from trade feedback</Badge>
-              )}
-            </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+            <p className="text-[11px] text-emerald-400 font-bold">
+              💰 Total Yield: {smart_cash.weighted_annual_yield}% p.a. (₹{smart_cash.monthly_expected_income?.toLocaleString("en-IN")}/month)
+            </p>
           </div>
         </Card>
-
-        {/* Smart Cash */}
-        {smart_cash && smart_cash.total_cash > 0 && (
-          <Card title="Smart Cash Utilization">
-            <div className="space-y-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted">Total Cash</span>
-                <span className="font-mono text-emerald-400 font-semibold">
-                  ₹{smart_cash.total_cash?.toLocaleString("en-IN")}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted">Expected Yield</span>
-                <span className="font-mono text-gray-300">{smart_cash.weighted_annual_yield}% p.a.</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted">Monthly Income</span>
-                <span className="font-mono text-emerald-400">₹{smart_cash.monthly_expected_income?.toLocaleString("en-IN")}</span>
-              </div>
-              <div className="border-t border-border/40 pt-3 space-y-2">
-                {smart_cash.recommendations?.map((r, i) => (
-                  <div key={i} className="flex items-center justify-between bg-base/50 rounded-lg p-2.5 border border-border/30">
-                    <div>
-                      <p className="text-xs font-medium text-gray-200">{r.name}</p>
-                      <p className="text-[10px] text-muted">{r.annual_yield_pct}% p.a. · {r.risk_level}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-mono font-semibold text-gray-300">₹{r.amount?.toLocaleString("en-IN")}</p>
-                      <p className="text-[10px] text-emerald-400">₹{r.monthly_yield}/mo</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-        )}
-      </div>
-
-      {/* Monte Carlo */}
-      {monte_carlo && (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              label="Expected Return"
-              value={`${monte_carlo.expected_return >= 0 ? "+" : ""}${monte_carlo.expected_return?.toFixed(1)}%`}
-              color={monte_carlo.expected_return >= 0 ? "text-profit" : "text-loss"}
-            />
-            <StatCard
-              label="Best Case (95th)"
-              value={`+${monte_carlo.best_case_return?.toFixed(1)}%`}
-              color="text-emerald-400"
-            />
-            <StatCard
-              label="Worst Case (5th)"
-              value={`${monte_carlo.worst_case_return?.toFixed(1)}%`}
-              color="text-red-400"
-            />
-            <StatCard
-              label="VaR (95%)"
-              value={`${monte_carlo.var_95?.toFixed(1)}%`}
-              sub={`P(loss): ${(monte_carlo.prob_negative_month * 100).toFixed(0)}%`}
-              color="text-amber-400"
-            />
-          </div>
-
-          {/* Monte Carlo Distribution Chart */}
-          {monte_carlo.histogram_bins?.length > 0 && (
-            <Card title="Return Distribution (Monte Carlo · 5000 paths)">
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={monte_carlo.histogram_bins.map((bin, i) => ({
-                      bin: `${(bin * 100).toFixed(0)}%`,
-                      count: monte_carlo.histogram_counts?.[i] || 0,
-                    }))}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(30,41,59,0.5)" vertical={false} />
-                    <XAxis dataKey="bin" tick={{ fontSize: 9, fill: "#64748b" }} tickLine={false} axisLine={false} interval={2} />
-                    <YAxis tick={{ fontSize: 9, fill: "#64748b" }} tickLine={false} axisLine={false} width={35} />
-                    <Tooltip {...CHART_TOOLTIP} />
-                    <Bar dataKey="count" fill="#3b82f6" radius={[2, 2, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-          )}
-
-          {/* Percentile Fan */}
-          {monte_carlo.percentile_curves && Object.keys(monte_carlo.percentile_curves).length > 0 && (
-            <Card title="Percentile Fan (12-month forward)">
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={
-                      (monte_carlo.percentile_curves.p50 || []).map((_, i) => ({
-                        month: i,
-                        p5: monte_carlo.percentile_curves.p5?.[i] || 0,
-                        p25: monte_carlo.percentile_curves.p25?.[i] || 0,
-                        p50: monte_carlo.percentile_curves.p50?.[i] || 0,
-                        p75: monte_carlo.percentile_curves.p75?.[i] || 0,
-                        p95: monte_carlo.percentile_curves.p95?.[i] || 0,
-                      }))
-                    }
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(30,41,59,0.5)" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#64748b" }} tickLine={false} label={{ value: "Month", position: "insideBottom", offset: -5, fontSize: 10, fill: "#64748b" }} />
-                    <YAxis tick={{ fontSize: 10, fill: "#64748b" }} tickLine={false} axisLine={false} width={50} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip {...CHART_TOOLTIP} />
-                    <Area type="monotone" dataKey="p5" stroke="none" fill="#ef4444" fillOpacity={0.1} />
-                    <Area type="monotone" dataKey="p25" stroke="none" fill="#f59e0b" fillOpacity={0.15} />
-                    <Area type="monotone" dataKey="p50" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} strokeWidth={2} />
-                    <Area type="monotone" dataKey="p75" stroke="none" fill="#10b981" fillOpacity={0.15} />
-                    <Area type="monotone" dataKey="p95" stroke="none" fill="#10b981" fillOpacity={0.1} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-4 mt-2 text-[10px] text-muted">
-                {[["5th", "#ef4444"], ["25th", "#f59e0b"], ["50th (median)", "#3b82f6"], ["75th", "#10b981"], ["95th", "#10b981"]].map(([l, c]) => (
-                  <div key={l} className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
-                    <span>{l}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-        </>
       )}
 
-      {/* Liquidity */}
+      {/* Liquidity Filter (Simplified) */}
       {liquidity && liquidity.rejected?.length > 0 && (
-        <Card title="Liquidity Filter — Rejected Stocks">
-          <div className="overflow-x-auto">
-            <table className="pro-table w-full">
-              <thead>
-                <tr>
-                  <th className="text-left">Symbol</th>
-                  <th className="text-right">Avg Volume</th>
-                  <th className="text-right">Turnover</th>
-                  <th className="text-right">Spread</th>
-                  <th className="text-left">Reason</th>
-                </tr>
-              </thead>
-              <tbody>
-                {liquidity.rejected.map((r) => (
-                  <tr key={r.symbol}>
-                    <td className="font-semibold text-red-400">{r.symbol}</td>
-                    <td className="text-right font-mono">{r.avg_daily_volume?.toLocaleString()}</td>
-                    <td className="text-right font-mono">₹{(r.avg_daily_turnover / 100000)?.toFixed(1)}L</td>
-                    <td className="text-right font-mono">{r.estimated_spread_pct?.toFixed(2)}%</td>
-                    <td className="text-xs text-muted">{r.rejection_reason}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <Card title="Stocks Excluded (Low Liquidity)">
+          <p className="text-xs text-muted mb-4">These stocks have too high trading spreads (~cost to buy/sell)</p>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {liquidity.rejected.slice(0, 5).map((r) => (
+              <div key={r.symbol} className="p-2 bg-red-500/5 border border-red-500/20 rounded text-xs">
+                <div className="flex justify-between items-start">
+                  <p className="font-mono font-bold text-red-400">{r.symbol}</p>
+                  <p className="text-red-400">Spread: {r.estimated_spread_pct?.toFixed(2)}%</p>
+                </div>
+                <p className="text-muted mt-0.5 text-[10px]">Volume: {r.avg_daily_volume?.toLocaleString()} | {r.rejection_reason}</p>
+              </div>
+            ))}
+            {liquidity.rejected.length > 5 && (
+              <p className="text-xs text-muted text-center py-2">+{liquidity.rejected.length - 5} more excluded</p>
+            )}
           </div>
         </Card>
       )}
