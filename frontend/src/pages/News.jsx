@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import {
   Newspaper, RefreshCw, ExternalLink, Sparkles, TrendingUp,
-  TrendingDown, Minus, Globe, Filter, Clock,
+  TrendingDown, Minus, Globe, Filter, Clock, Zap,
 } from "lucide-react";
 import { fetchNews, fetchNewsAISummary } from "../api";
 
 const CATEGORY_COLORS = {
   "Indian Markets": { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20" },
-  "Indian Economy": { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
-  "Indian Finance": { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
+  "Indian Finance": { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
+  "Indian Economy": { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
+  "Geopolitics & War": { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/20" },
   "Global": { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20" },
   "US Markets": { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/20" },
 };
@@ -40,6 +41,7 @@ export default function News() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("importance");  // "importance" or "recent"
   const [aiSummary, setAiSummary] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -71,7 +73,14 @@ export default function News() {
   useEffect(() => { loadNews(); }, []);
 
   const categories = ["all", ...new Set(articles.map((a) => a.category))];
-  const filtered = filter === "all" ? articles : articles.filter((a) => a.category === filter);
+  let filtered = filter === "all" ? articles : articles.filter((a) => a.category === filter);
+  
+  // Apply sorting
+  if (sortBy === "importance") {
+    filtered = [...filtered].sort((a, b) => (b.importance || 0) - (a.importance || 0));
+  } else if (sortBy === "recent") {
+    filtered = [...filtered].sort((a, b) => new Date(b.published) - new Date(a.published));
+  }
 
   const sentCfg = SENTIMENT_CFG[aiSummary?.sentiment] || SENTIMENT_CFG.neutral;
   const SentIcon = sentCfg.icon;
@@ -173,6 +182,38 @@ export default function News() {
         })}
       </div>
 
+      {/* Sort Options */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-gold/5 border border-gold/10 rounded-lg w-fit">
+        <Filter size={12} className="text-gold/60" />
+        <span className="text-[10px] font-semibold text-gold/70 uppercase tracking-[0.1em]">Sort:</span>
+        <button
+          onClick={() => setSortBy("importance")}
+          className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-all ${
+            sortBy === "importance"
+              ? "bg-gold text-black"
+              : "text-gold/70 hover:text-gold hover:bg-gold/10"
+          }`}
+        >
+          <span className="flex items-center gap-1">
+            <Zap size={10} />
+            Important
+          </span>
+        </button>
+        <button
+          onClick={() => setSortBy("recent")}
+          className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-all ${
+            sortBy === "recent"
+              ? "bg-gold text-black"
+              : "text-gold/70 hover:text-gold hover:bg-gold/10"
+          }`}
+        >
+          <span className="flex items-center gap-1">
+            <Clock size={10} />
+            Recent
+          </span>
+        </button>
+      </div>
+
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-12">
@@ -201,14 +242,38 @@ export default function News() {
         {filtered.map((article, i) => {
           const catCfg = CATEGORY_COLORS[article.category] || {};
           const time = formatTime(article.published);
+          const importance = article.importance || 0;
+          
+          // Importance indicator color
+          let importanceColor = "bg-gray-400/20";
+          let importanceText = "text-gray-400";
+          if (importance >= 60) {
+            importanceColor = "bg-red-500/20";
+            importanceText = "text-red-400";
+          } else if (importance >= 40) {
+            importanceColor = "bg-amber-500/20";
+            importanceText = "text-amber-400";
+          } else if (importance >= 20) {
+            importanceColor = "bg-green-500/20";
+            importanceText = "text-green-400";
+          }
+          
           return (
             <a
               key={i}
               href={article.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="glass-card p-4 flex items-start gap-4 group hover:border-gold/25 transition-all cursor-pointer block"
+              className="glass-card p-4 flex items-start gap-4 group hover:border-gold/25 transition-all cursor-pointer block relative"
             >
+              {/* Importance indicator bar */}
+              {importance > 0 && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l" style={{
+                  background: `linear-gradient(to bottom, ${importance >= 60 ? '#f87171' : importance >= 40 ? '#fbbf24' : '#4ade80'}, ${importance >= 60 ? '#dc2626' : importance >= 40 ? '#d97706' : '#22c55e'})`,
+                  opacity: Math.min(importance / 100, 1)
+                }} />
+              )}
+              
               <div className="text-2xl flex-shrink-0 mt-0.5">{article.icon}</div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-[13px] font-semibold text-gray-200 group-hover:text-gold-bright transition-colors leading-snug line-clamp-2">
@@ -217,10 +282,17 @@ export default function News() {
                 {article.description && (
                   <p className="text-[11px] text-muted mt-1 line-clamp-2 leading-relaxed">{article.description}</p>
                 )}
-                <div className="flex items-center gap-3 mt-2">
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border ${catCfg.bg || ""} ${catCfg.text || "text-muted"} ${catCfg.border || "border-border"}`}>
                     {article.category}
                   </span>
+                  {importance > 0 && (
+                    <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold border ${importanceColor}`}>
+                      <span className={`text-[8px] font-bold ${importanceText}`}>
+                        ⚡ {importance}
+                      </span>
+                    </span>
+                  )}
                   <span className="text-[10px] text-muted font-mono">{article.source}</span>
                   {time && (
                     <span className="flex items-center gap-1 text-[10px] text-muted/60 font-mono">

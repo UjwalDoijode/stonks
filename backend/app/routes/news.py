@@ -1,22 +1,29 @@
 """
-Financial & Global News aggregator.
+Financial & Global News aggregator with importance scoring.
 
 Sources (free RSS/public):
-- Moneycontrol (Indian markets)
-- Economic Times (Indian economy)
-- LiveMint (Indian finance)
-- Reuters (global)
-- Bloomberg (global markets)
-- CNBC (US markets)
+- Moneycontrol, Economic Times, LiveMint (Indian Markets & Finance)
+- NDTV Profit (Indian stocks)
+- Business Today (Indian finance)
+- Reuters World (Global news & Geopolitics)
+- Al Jazeera (International news)
+- BBC News (Geopolitics & War)
+- Times of India (Indian news)
 
-Plus Gemini AI for news sentiment summary.
+Features:
+- Date filtering (last 7 days only)
+- Importance scoring based on keywords
+- Categories: Indian Markets, Indian Finance, Geopolitics, War, Global
+- AI-powered sentiment analysis via Gemini
 """
 
 import asyncio
 import logging
 import re
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
+from email.utils import parsedate_to_datetime
+from typing import Optional
 
 import httpx
 from fastapi import APIRouter
@@ -26,7 +33,7 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["news"])
 
-# RSS feeds — all free, no auth needed
+# RSS feeds — fresh, current content
 NEWS_FEEDS = {
     "moneycontrol": {
         "name": "Moneycontrol",
@@ -34,11 +41,11 @@ NEWS_FEEDS = {
         "url": "https://www.moneycontrol.com/rss/marketreports.xml",
         "icon": "🇮🇳",
     },
-    "et_markets": {
-        "name": "Economic Times",
-        "category": "Indian Economy",
+    "et": {
+        "name": "Economic Times Markets",
+        "category": "Indian Finance",
         "url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
-        "icon": "📈",
+        "icon": "📊",
     },
     "livemint": {
         "name": "LiveMint",
@@ -46,17 +53,41 @@ NEWS_FEEDS = {
         "url": "https://www.livemint.com/rss/markets",
         "icon": "💰",
     },
-    "reuters_business": {
-        "name": "Reuters",
+    "ndtv_profit": {
+        "name": "NDTV Profit",
+        "category": "Indian Markets",
+        "url": "https://feeds.ndtv.com/ndtvprofit-latest",
+        "icon": "📈",
+    },
+    "business_today": {
+        "name": "Business Today",
+        "category": "Indian Finance",
+        "url": "https://www.businesstoday.in/latest/index.xml",
+        "icon": "💼",
+    },
+    "reuters": {
+        "name": "Reuters World",
         "category": "Global",
-        "url": "https://news.google.com/rss/search?q=stock+market+finance&hl=en-IN&gl=IN&ceid=IN:en",
+        "url": "https://feeds.reuters.com/reuters/businessNews",
         "icon": "🌍",
     },
-    "cnbc": {
-        "name": "CNBC",
-        "category": "US Markets",
-        "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147",
-        "icon": "🇺🇸",
+    "bbc_business": {
+        "name": "BBC Business",
+        "category": "Global",
+        "url": "http://feeds.bbc.co.uk/news/business/rss.xml",
+        "icon": "📡",
+    },
+    "aljazeera": {
+        "name": "Al Jazeera Business",
+        "category": "Global",
+        "url": "https://www.aljazeera.com/xml/rss/all.xml",
+        "icon": "🌐",
+    },
+    "toi_news": {
+        "name": "Times of India",
+        "category": "Indian Markets",
+        "url": "https://feeds.timesofindia.indiatimes.com/defaultappfeed.cms",
+        "icon": "🗞️",
     },
 }
 
@@ -71,11 +102,92 @@ def _clean_html(text: str) -> str:
     return clean[:300]
 
 
+def _parse_date(date_str: str) -> Optional[datetime]:
+    """Parse RSS date strings (RFC 2822 format mostly)."""
+    if not date_str:
+        return None
+    try:
+        # Try RFC 2822 format (RSS standard)
+        return parsedate_to_datetime(date_str)
+    except (TypeError, ValueError):
+        try:
+            # Try ISO format
+            return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            return None
+
+
+def _calculate_importance(title: str, description: str, category: str) -> int:
+    """Calculate importance score (0-100) based on keywords."""
+    text = f"{title} {description}".lower()
+    score = 0
+    
+    # War & Geopolitics (40 points)
+    geopolitical_terms = ["war", "conflict", "military", "attack", "invasion", "russia", "ukraine", 
+                          "israel", "palestine", "gaza", "china", "taiwan", "sanction", "embargo",
+                          "nato", "troops", "armed forces", "ceasefire", "peace talks", "diplomat"]
+    if any(term in text for term in geopolitical_terms):
+        score += 40
+        # Add category or create one
+        return score
+    
+    # Finance & Markets (30 points)
+    financial_terms = ["rbi", "inflationary", "interest rate", "rupee", "crash", "surge", "bull run",
+                       "bear market", "ipo", "stock split", "dividend", "earnings", "profit", "revenue",
+                       "ipo", "merger", "acquisition", "nse", "bse", "sensex", "nifty", "circuit breaker"]
+    if any(term in text for term in financial_terms):
+        score += 30
+    
+    # Market Events (20 points)
+    market_terms = ["market", "stock", "share", "price", "rally", "decline", "trading", "investor",
+                    "volatility", "recovery", "correction", "record high", "record low"]
+    if any(term in text for term in market_terms):
+        score += 20
+    
+    # Fed/RBI/Policy (25 points)
+    policy_terms = ["federal reserve", "interest rate hike", "rate cut", "monetary policy", "inflation",
+                    "economic growth", "currency", "gold", "oil", "commodity"]
+    if any(term in text for term in policy_terms):
+        score += 25
+    
+    # Company-specific (15 points)
+    company_terms = ["tcs", "reliance", "infosys", "hdfc", "icici", "axis", "kotak", "hul", "pfc",
+                     "sbi", "bajaj", "maruti", "ongc", "coal india", "ntpc", "indiabulls"]
+    if any(term in text for term in company_terms):
+        score += 15
+    
+    # Global indices (10 points)
+    if any(term in text for term in ["s&p 500", "nasdaq", "ftse", "dax", "nikkei", "hang seng"]):
+        score += 10
+    
+    return min(score, 100)  # Cap at 100
+
+
+def _categorize_news(title: str, description: str) -> str:
+    """Determine if article is about Geopolitics, War, Finance, etc."""
+    text = f"{title} {description}".lower()
+    
+    # Check for War & Conflict
+    if any(term in text for term in ["war", "conflict", "armed", "attack", "invasion", "military"]):
+        return "Geopolitics & War"
+    
+    # Check for Geopolitics
+    if any(term in text for term in ["geopolitical", "diplomat", "sanction", "embargo", "treaty", "ally", "alliance"]):
+        return "Geopolitics & War"
+    
+    # Check for specific conflicts
+    if any(term in text for term in ["ukraine", "russia", "gaza", "israel", "palestine", "china", "taiwan"]):
+        return "Geopolitics & War"
+    
+    # Otherwise return original category
+    return None
+
+
 async def _fetch_feed(client: httpx.AsyncClient, feed_id: str, feed: dict) -> list:
-    """Fetch and parse a single RSS feed."""
+    """Fetch and parse a single RSS feed with recent articles only."""
     articles = []
     try:
-        resp = await client.get(feed["url"], follow_redirects=True)
+        resp = await client.get(feed["url"], follow_redirects=True, timeout=20)
         if resp.status_code != 200:
             return []
 
@@ -84,7 +196,10 @@ async def _fetch_feed(client: httpx.AsyncClient, feed_id: str, feed: dict) -> li
         # Handle both RSS 2.0 and Atom feeds
         items = root.findall(".//item") or root.findall(".//{http://www.w3.org/2005/Atom}entry")
 
-        for item in items[:8]:  # Max 8 per source
+        now = datetime.now()
+        week_ago = now - timedelta(days=7)
+
+        for item in items[:15]:  # Check more items to get 7+ recent ones
             # RSS 2.0
             title = item.findtext("title", "")
             link = item.findtext("link", "")
@@ -105,15 +220,36 @@ async def _fetch_feed(client: httpx.AsyncClient, feed_id: str, feed: dict) -> li
             if not title:
                 continue
 
+            # Parse and validate date
+            parsed_date = _parse_date(pub_date)
+            if not parsed_date:
+                # If we can't parse date, skip (likely old/invalid content)
+                continue
+
+            # Make comparable (remove timezone for simple comparison)
+            if parsed_date.tzinfo:
+                parsed_date = parsed_date.replace(tzinfo=None)
+
+            # Only include articles from last 7 days
+            if parsed_date < week_ago:
+                continue
+
+            # Calculate importance
+            importance = _calculate_importance(title, desc, feed["category"])
+            
+            # Determine category (geopolitics/war override)
+            category = _categorize_news(title, desc) or feed["category"]
+
             articles.append({
                 "title": _clean_html(title),
                 "link": link.strip() if link else "",
                 "description": _clean_html(desc),
-                "published": pub_date.strip() if pub_date else "",
+                "published": parsed_date.isoformat() if parsed_date else pub_date,
                 "source": feed["name"],
                 "source_id": feed_id,
-                "category": feed["category"],
+                "category": category,
                 "icon": feed["icon"],
+                "importance": importance,
             })
     except Exception as e:
         logger.warning(f"Feed {feed_id} fetch failed: {e}")
@@ -122,9 +258,14 @@ async def _fetch_feed(client: httpx.AsyncClient, feed_id: str, feed: dict) -> li
 
 
 @router.get("/api/news")
-async def get_news():
-    """Fetch financial news from multiple RSS sources."""
-    async with httpx.AsyncClient(timeout=15, headers={"User-Agent": "Stonks/2.0"}) as client:
+async def get_news(sort_by: str = "importance"):
+    """
+    Fetch financial news from multiple RSS sources.
+    
+    Args:
+        sort_by: "importance" (default), "recent", or specific category
+    """
+    async with httpx.AsyncClient(timeout=20, headers={"User-Agent": "Stonks/2.0"}) as client:
         tasks = [_fetch_feed(client, fid, feed) for fid, feed in NEWS_FEEDS.items()]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -133,15 +274,22 @@ async def get_news():
         if isinstance(result, list):
             all_articles.extend(result)
 
-    # Sort by source order (Indian first, then global)
-    source_order = list(NEWS_FEEDS.keys())
-    all_articles.sort(key=lambda a: source_order.index(a["source_id"]) if a["source_id"] in source_order else 99)
-
+    # Sort by importance (descending), then by date (newest first)
+    if sort_by == "importance":
+        all_articles.sort(key=lambda a: (-a.get("importance", 0), -datetime.fromisoformat(a["published"]).timestamp() if a["published"] else 0))
+    elif sort_by == "recent":
+        all_articles.sort(key=lambda a: -datetime.fromisoformat(a["published"]).timestamp() if a["published"] else 0)
+    
     return {
         "articles": all_articles,
         "sources": len(NEWS_FEEDS),
         "total": len(all_articles),
         "timestamp": datetime.now().isoformat(),
+        "filters": {
+            "date_range": "Last 7 days",
+            "sort_by": sort_by,
+            "categories": list(set(a["category"] for a in all_articles))
+        }
     }
 
 
