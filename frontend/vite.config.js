@@ -17,4 +17,9 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     sourcemap: false,
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    include: ['tests/**/*.test.{js,jsx}'],
+  },
 }))

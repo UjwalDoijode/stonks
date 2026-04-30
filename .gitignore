@@ -25,3 +25,7 @@ dist/
 
 # Docker
 *.log
+
+# Copilot WS client (local AI replacement — do not push)
+copilot-extract.py
+backend/app/copilot_client.py

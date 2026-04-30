@@ -208,3 +208,94 @@ export function AllocationDonut({ equity = 0, gold = 0, silver = 0, cash = 0 }) 
     </div>
   );
 }
+
+/* ─── Sparkline (no dependencies) ─────────────────────── */
+export function Sparkline({ data = [], width = 96, height = 28, stroke, fill = true }) {
+  if (!data || data.length < 2) {
+    return <div style={{ width, height }} className="bg-surface-2/30 rounded" />;
+  }
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const stepX = width / (data.length - 1);
+  const points = data.map((v, i) => `${(i * stepX).toFixed(2)},${(height - ((v - min) / range) * height).toFixed(2)}`);
+  const path = `M${points.join(" L")}`;
+  const area = `${path} L${width},${height} L0,${height} Z`;
+  const up = data[data.length - 1] >= data[0];
+  const color = stroke || (up ? "#00ff41" : "#ff3232");
+  const gradId = `sg-${Math.random().toString(36).slice(2, 8)}`;
+  return (
+    <svg width={width} height={height} className="block">
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {fill && <path d={area} fill={`url(#${gradId})`} />}
+      <path d={path} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ─── ChangePill — color-coded delta with optional arrow ─ */
+export function ChangePill({ value, suffix = "%", showSign = true }) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return <span className="number-pill" style={{ color: "#5a6478" }}>—</span>;
+  }
+  const positive = value >= 0;
+  const sign = showSign ? (positive ? "+" : "") : "";
+  return (
+    <span className={`number-pill ${positive ? "positive" : "negative"}`}>
+      {positive ? "▲" : "▼"} {sign}{value.toFixed(2)}{suffix}
+    </span>
+  );
+}
+
+/* ─── TrendBadge — bullish / bearish / sideways ───────── */
+const TREND_STYLES = {
+  bullish:  { label: "Bullish",  cls: "bg-matrix/10 text-matrix border-matrix/25" },
+  bearish:  { label: "Bearish",  cls: "bg-red-500/10 text-red-400 border-red-500/25" },
+  sideways: { label: "Sideways", cls: "bg-amber-500/10 text-amber-400 border-amber-500/25" },
+};
+export function TrendBadge({ trend = "sideways" }) {
+  const k = String(trend).toLowerCase();
+  const s = TREND_STYLES[k] || TREND_STYLES.sideways;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold border font-mono uppercase tracking-wider ${s.cls}`}>
+      <span className="w-1 h-1 rounded-full bg-current" />
+      {s.label}
+    </span>
+  );
+}
+
+/* ─── InsightTile — compact icon + title + body card ──── */
+export function InsightTile({ icon, title, body, tone = "default" }) {
+  const tones = {
+    default: "border-gold/15 text-gray-300",
+    positive: "border-matrix/25 text-matrix",
+    negative: "border-red-500/25 text-red-400",
+    warning:  "border-amber-500/25 text-amber-400",
+  };
+  return (
+    <div className={`glass-card p-3.5 flex gap-3 items-start ${tones[tone] || tones.default}`}>
+      {icon && <div className="mt-0.5 opacity-80">{icon}</div>}
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-1">{title}</p>
+        <p className="text-[12px] leading-snug">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── EmptyState ──────────────────────────────────────── */
+export function EmptyState({ icon, title, message, action }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      {icon && <div className="text-muted/40 mb-3">{icon}</div>}
+      <h4 className="text-sm font-semibold text-gray-200 mb-1">{title}</h4>
+      {message && <p className="text-[12px] text-muted max-w-md">{message}</p>}
+      {action && <div className="mt-4">{action}</div>}
+    </div>
+  );
+}

@@ -14,7 +14,7 @@ Features:
 - Date filtering (last 7 days only)
 - Importance scoring based on keywords
 - Categories: Indian Markets, Indian Finance, Geopolitics, War, Global
-- AI-powered sentiment analysis via Gemini
+- AI-powered sentiment analysis via Copilot
 """
 
 import asyncio
@@ -370,10 +370,9 @@ async def get_news_ai_summary():
         for a in all_articles[:20]
     )
 
-    if not settings.GEMINI_API_KEY:
-        return {"summary": "AI summary unavailable — no API key configured.", "sentiment": "neutral"}
-
     try:
+        from app.copilot_client import call_copilot
+
         prompt = (
             f"Here are today's financial news headlines:\n\n{headlines}\n\n"
             "Provide a 150-word market intelligence brief:\n"
@@ -382,33 +381,20 @@ async def get_news_ai_summary():
             "### Action Items\n(What should traders watch/do based on this news)\n\n"
             "Be specific about which stocks/sectors are affected. Use ₹ for amounts."
         )
+        system = "You are an expert Indian stock market analyst. Analyze news for trading impact. Be concise, specific, actionable."
 
-        gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-        body = {
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "systemInstruction": {"parts": [{"text": "You are an expert Indian stock market analyst. Analyze news for trading impact. Be concise, specific, actionable."}]},
-            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 500},
-        }
+        summary = await call_copilot(prompt, system=system, timeout=30)
 
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(f"{gemini_url}?key={settings.GEMINI_API_KEY}", json=body)
-
-        if resp.status_code == 200:
-            data = resp.json()
-            summary = data["candidates"][0]["content"]["parts"][0]["text"]
-
-            # Detect sentiment
-            lower = summary.lower()
-            if any(w in lower for w in ["bullish", "positive", "rally", "upbeat"]):
-                sentiment = "bullish"
-            elif any(w in lower for w in ["bearish", "negative", "sell-off", "decline", "crash"]):
-                sentiment = "bearish"
-            else:
-                sentiment = "mixed"
-
-            return {"summary": summary, "sentiment": sentiment}
+        # Detect sentiment
+        lower = summary.lower()
+        if any(w in lower for w in ["bullish", "positive", "rally", "upbeat"]):
+            sentiment = "bullish"
+        elif any(w in lower for w in ["bearish", "negative", "sell-off", "decline", "crash"]):
+            sentiment = "bearish"
         else:
-            return {"summary": "AI summary temporarily unavailable.", "sentiment": "neutral"}
+            sentiment = "mixed"
+
+        return {"summary": summary, "sentiment": sentiment}
 
     except Exception as e:
         logger.warning(f"News AI summary failed: {e}")

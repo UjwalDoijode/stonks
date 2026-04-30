@@ -11,6 +11,7 @@ from app.config import settings
 from app.database import init_db
 from app.routes import scanner, trades, portfolio, backtest, risk_allocation, deployment, advisor
 from app.routes import risk_overview, geopolitics, paper_trading, algo_trading, ai_chat, news
+from app.routes import alerts as alerts_route, signals_today
 
 logging.basicConfig(
     level=logging.INFO,
@@ -134,6 +135,8 @@ app.include_router(paper_trading.router)
 app.include_router(algo_trading.router)
 app.include_router(ai_chat.router)
 app.include_router(news.router)
+app.include_router(alerts_route.router)
+app.include_router(signals_today.router)
 
 
 @app.get("/api/capital")

@@ -230,17 +230,15 @@ async def get_smart_recommendation(
 
         summary = " | ".join(parts)
 
-        # 9. Gemini AI analysis (non-blocking, best-effort)
+        # 9. Copilot AI analysis (non-blocking, best-effort)
         ai_insight = None
         try:
-            from app.config import settings as cfg
-            if cfg.GEMINI_API_KEY:
-                import httpx
-                stock_list = ", ".join(
+            from app.copilot_client import call_copilot
+            stock_list = ", ".join(
                     f"{r['symbol']} (₹{r['price']}, rank {r['rank_score']:.0f})"
                     for r in recommendations if r["type"] == "EQUITY"
                 )
-                prompt = (
+            prompt = (
                     f"I have ₹{capital:,.0f} to invest in Indian stock market today.\n"
                     f"Market regime: {plan.regime_label} (risk score {blended:.0f}/100)\n"
                     f"VIX: {macro.get('vix', 'N/A')}\n"
@@ -255,19 +253,10 @@ async def get_smart_recommendation(
                     "If the stock picks are poor, suggest 2-3 better alternatives from NIFTY 50. "
                     "Be direct and actionable. Use ₹ for amounts."
                 )
-                gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-                body = {
-                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                    "systemInstruction": {"parts": [{"text": "You are an expert Indian stock market advisor. Be concise, specific, actionable. No disclaimers."}]},
-                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 300},
-                }
-                async with httpx.AsyncClient(timeout=30) as client:
-                    resp = await client.post(f"{gemini_url}?key={cfg.GEMINI_API_KEY}", json=body)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    ai_insight = data["candidates"][0]["content"]["parts"][0]["text"]
+            system = "You are an expert Indian stock market advisor. Be concise, specific, actionable. No disclaimers."
+            ai_insight = await call_copilot(prompt, system=system, timeout=30)
         except Exception as e:
-            logger.warning(f"Gemini advisor insight failed: {e}")
+            logger.warning(f"Copilot advisor insight failed: {e}")
 
         return {
             "capital": capital,
@@ -308,9 +297,7 @@ async def ai_stock_recommendation(
     import numpy as np
     import yfinance as yf
     from app.config import settings
-
-    if not settings.GEMINI_API_KEY:
-        return {"recommendation": "AI is unavailable — no API key configured.", "market_data": {}}
+    from app.copilot_client import call_copilot
 
     # 1. Gather live market context
     market_context = ""
@@ -392,27 +379,16 @@ Rules:
 - No disclaimers — be direct and actionable
 """
 
-    gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-    body = {
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "systemInstruction": {"parts": [{"text": (
+    system = (
             "You are STONKS AI — an elite Indian stock market advisor. "
             "You give specific, actionable stock recommendations with exact price levels. "
             "You analyze technicals (RSI, moving averages, chart patterns) and fundamentals "
             "(PE, earnings growth, sector trends). You're direct, confident, and never vague. "
             f"Today is {datetime.now().strftime('%B %d, %Y')}."
-        )}]},
-        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048, "topP": 0.9},
-    }
+        )
 
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(f"{gemini_url}?key={settings.GEMINI_API_KEY}", json=body)
-        if resp.status_code != 200:
-            logger.error(f"Gemini advisor error {resp.status_code}: {resp.text[:300]}")
-            return {"recommendation": "AI service temporarily unavailable. Please try again.", "market_data": market_context}
-        data = resp.json()
-        text = data["candidates"][0]["content"]["parts"][0]["text"]
+        text = await call_copilot(prompt, system=system, timeout=60)
         return {
             "recommendation": text,
             "market_data": market_context,
@@ -420,5 +396,5 @@ Rules:
             "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
-        logger.error(f"Gemini AI recommend failed: {e}")
+        logger.error(f"Copilot AI recommend failed: {e}")
         return {"recommendation": "AI service error. Please try again.", "market_data": market_context}

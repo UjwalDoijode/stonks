@@ -370,3 +370,23 @@ class TradeFeedbackRecord(Base):
     was_profitable = Column(Boolean, default=False)
 
     created_at = Column(DateTime, server_default=func.now())
+
+
+# ─── Price/Indicator Alerts ──────────────────────────
+class Alert(Base):
+    """User-defined price or indicator alerts (server-side, persistent)."""
+    __tablename__ = "alerts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String(30), nullable=False, index=True)
+    kind = Column(String(20), nullable=False)        # above / below / rsi_above / rsi_below
+    value = Column(Float, nullable=False)
+    note = Column(String(200), nullable=True)
+
+    triggered = Column(Boolean, default=False, index=True)
+    triggered_at = Column(DateTime, nullable=True)
+    triggered_price = Column(Float, nullable=True)
+    triggered_value = Column(Float, nullable=True)   # actual indicator value at trigger
+
+    active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, server_default=func.now())

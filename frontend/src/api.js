@@ -1,15 +1,62 @@
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
-async function request(url, options = {}) {
-  const res = await fetch(`${BASE}${url}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || "API Error");
+/* ──────────────────────────────────────────────────────────────
+   Lightweight client-side cache + in-flight request deduplication.
+
+   - GET requests: cached with TTL (default 30s). Repeat calls
+     within TTL return the cached payload instantly.
+   - In-flight dedup: if the same GET is already pending, callers
+     await the existing promise instead of firing a duplicate.
+   - Mutations (POST/PUT/DELETE/PATCH): bypass cache and invalidate
+     the entire cache (safe default — keeps data consistent).
+   - Manual control: `invalidateCache(prefix?)` and per-call
+     `{ cache: false }` or `{ ttl: 60_000 }` options.
+   ────────────────────────────────────────────────────────────── */
+const _cache = new Map();      // url -> { ts, ttl, data }
+const _inflight = new Map();   // url -> Promise
+
+const DEFAULT_TTL = 30_000;
+
+export function invalidateCache(prefix) {
+  if (!prefix) { _cache.clear(); return; }
+  for (const k of _cache.keys()) {
+    if (k.startsWith(prefix)) _cache.delete(k);
   }
-  return res.json();
+}
+
+async function request(url, options = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  const useCache = options.cache !== false && method === "GET";
+  const ttl = options.ttl ?? DEFAULT_TTL;
+
+  if (useCache) {
+    const hit = _cache.get(url);
+    if (hit && Date.now() - hit.ts < hit.ttl) return hit.data;
+    if (_inflight.has(url)) return _inflight.get(url);
+  }
+
+  const { cache: _c, ttl: _t, ...fetchOpts } = options;
+
+  const p = (async () => {
+    const res = await fetch(`${BASE}${url}`, {
+      headers: { "Content-Type": "application/json", ...fetchOpts.headers },
+      ...fetchOpts,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || "API Error");
+    }
+    const data = await res.json();
+    if (useCache) _cache.set(url, { ts: Date.now(), ttl, data });
+    if (method !== "GET") invalidateCache();   // mutations bust the cache
+    return data;
+  })();
+
+  if (useCache) {
+    _inflight.set(url, p);
+    p.finally(() => _inflight.delete(url));
+  }
+  return p;
 }
 
 // Dashboard
@@ -79,8 +126,12 @@ export const searchStocks = (q) => request(`/scanner/search?q=${encodeURICompone
 export const fetchStockDetail = (symbol) => request(`/scanner/stock/${encodeURIComponent(symbol)}`);
 export const fetchLivePrices = (symbols) => {
   const q = symbols ? `?symbols=${symbols}` : "";
-  return request(`/scanner/live-prices${q}`);
+  // Live prices need fresh data — short TTL.
+  return request(`/scanner/live-prices${q}`, { ttl: 10_000 });
 };
+
+// Test/debug exports
+export const __cache = { invalidate: invalidateCache, _request: request };
 
 // Watchlist
 export const fetchWatchlist = () => request("/scanner/watchlist");
@@ -143,3 +194,23 @@ export const aiMarketBrief = () => request("/ai/brief");
 // News
 export const fetchNews = () => request("/news");
 export const fetchNewsAISummary = () => request("/news/ai-summary");
+
+// Alerts (server-side, persistent — evaluated on every list call)
+export const fetchAlerts = (opts = {}) => {
+  const params = new URLSearchParams();
+  if (opts.evaluate === false) params.set("evaluate", "false");
+  if (opts.includeTriggered === false) params.set("include_triggered", "false");
+  const q = params.toString();
+  // Short TTL so live evaluation isn't masked by cache.
+  return request(`/alerts/${q ? `?${q}` : ""}`, { ttl: 5_000 });
+};
+export const createAlert = (data) =>
+  request("/alerts/", { method: "POST", body: JSON.stringify(data) });
+export const deleteAlert = (id) =>
+  request(`/alerts/${id}`, { method: "DELETE" });
+export const resetAlert = (id) =>
+  request(`/alerts/${id}/reset`, { method: "POST" });
+
+// Today's Signals digest (Dashboard surface)
+export const fetchTodaysSignals = (limit = 8) =>
+  request(`/signals/today?limit=${limit}`, { ttl: 30_000 });

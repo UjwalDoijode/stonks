@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Search, ArrowLeftRight, Calculator,
   FlaskConical, TrendingUp, PieChart, Crosshair, Star,
   Activity, Sparkles, Shield, Pencil, Check, X,
-  Globe, FileText, Bot, MessageSquare, Newspaper,
+  Globe, FileText, Bot, MessageSquare, Newspaper, Bell,
 } from "lucide-react";
 
 const NAV = [
@@ -11,6 +11,7 @@ const NAV = [
   { id: "ai",         label: "AI Assistant",    icon: Sparkles },
   { id: "scanner",    label: "Scanner",         icon: Search },
   { id: "advisor",    label: "Smart Advisor",   icon: MessageSquare },
+  { id: "alerts",     label: "Alerts",          icon: Bell },
   { id: "risk",       label: "Risk Control",    icon: Shield },
   { id: "algos",      label: "Algo Lab",        icon: Bot },
   { id: "trades",     label: "Trades",          icon: ArrowLeftRight },

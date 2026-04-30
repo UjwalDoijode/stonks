@@ -1,5 +1,5 @@
 """
-Gemini AI-powered market intelligence assistant.
+Copilot AI-powered market intelligence assistant.
 
 Features:
 - General market chat with real-time data enrichment
@@ -13,20 +13,15 @@ import logging
 import math
 from datetime import datetime
 
-import httpx
 import numpy as np
 import yfinance as yf
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.config import settings
+from app.copilot_client import call_copilot
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["ai"])
-
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-)
 
 SYSTEM_PROMPT = """You are STONKS AI — an expert Indian stock market analyst and trading advisor built into a professional trading terminal.
 
@@ -199,44 +194,23 @@ def _fetch_market_snapshot() -> dict:
     return result
 
 
-# ─── Gemini API ───────────────────────────────────────
+# ─── AI API ───────────────────────────────────────
 
 
-async def _call_gemini(messages: list[dict], system: str) -> str:
-    """Call Gemini API and return the text response."""
-    if not settings.GEMINI_API_KEY:
-        raise HTTPException(503, "Gemini API key not configured. Set GEMINI_API_KEY in config.")
-
-    contents = []
+async def _call_ai(messages: list[dict], system: str) -> str:
+    """Call Copilot AI and return the text response."""
+    # Format conversation history into a single prompt
+    parts = []
     for msg in messages:
-        contents.append({
-            "role": msg["role"],
-            "parts": [{"text": msg["text"]}],
-        })
+        role_label = "User" if msg["role"] == "user" else "Assistant"
+        parts.append(f"{role_label}: {msg['text']}")
+    prompt = "\n\n".join(parts)
 
-    body = {
-        "contents": contents,
-        "systemInstruction": {"parts": [{"text": system}]},
-        "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 2048,
-            "topP": 0.9,
-        },
-    }
-
-    async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.post(f"{GEMINI_URL}?key={settings.GEMINI_API_KEY}", json=body)
-
-    if resp.status_code != 200:
-        logger.error(f"Gemini API error {resp.status_code}: {resp.text[:500]}")
-        raise HTTPException(502, "AI service temporarily unavailable. Please try again.")
-
-    data = resp.json()
     try:
-        return data["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError):
-        logger.error(f"Unexpected Gemini response: {json.dumps(data)[:500]}")
-        raise HTTPException(502, "Unexpected AI response. Please try again.")
+        return await call_copilot(prompt, system=system, timeout=60)
+    except ConnectionError as e:
+        logger.error(f"Copilot AI error: {e}")
+        raise HTTPException(502, "AI service temporarily unavailable. Please try again.")
 
 
 # ─── Routes ───────────────────────────────────────────
@@ -286,7 +260,7 @@ async def ai_chat(req: ChatRequest):
         user_text += f"\n\n[Real-time market data for your analysis:]{enrichment}"
 
     messages.append({"role": "user", "text": user_text})
-    response = await _call_gemini(messages, system)
+    response = await _call_ai(messages, system)
 
     return {"response": response, "enriched_symbols": detected}
 
@@ -301,7 +275,7 @@ async def ai_analyze_stock(req: AnalyzeRequest):
     system = SYSTEM_PROMPT.format(date=datetime.now().strftime("%B %d, %Y"))
     prompt = ANALYSIS_PROMPT.format(**data)
     messages = [{"role": "user", "text": prompt}]
-    response = await _call_gemini(messages, system)
+    response = await _call_ai(messages, system)
 
     return {"response": response, "stock_data": data}
 
@@ -334,6 +308,6 @@ Keep it under 250 words. Be specific with numbers and levels."""
 
     system = SYSTEM_PROMPT.format(date=datetime.now().strftime("%B %d, %Y"))
     messages = [{"role": "user", "text": brief_prompt}]
-    response = await _call_gemini(messages, system)
+    response = await _call_ai(messages, system)
 
     return {"brief": response, "market_data": snapshot}

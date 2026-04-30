@@ -9,6 +9,7 @@ import RiskDashboard from "./pages/RiskDashboard";
 import AlgoTrading from "./pages/AlgoTrading";
 import AIChat from "./pages/AIChat";
 import News from "./pages/News";
+import Alerts from "./pages/Alerts";
 import { updateCapital as apiUpdateCapital } from "./api";
 
 export const CapitalContext = createContext({ capital: 20000, setCapital: () => {} });
@@ -24,6 +25,7 @@ const PAGES = {
   trades: Trades,
   backtest: Backtest,
   news: News,
+  alerts: Alerts,
 };
 
 export default function App() {
@@ -50,7 +52,7 @@ export default function App() {
         <Sidebar active={page} onNavigate={setPage} capital={capital} setCapital={setCapital} />
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-[1440px] mx-auto p-6">
-            <PageComponent />
+            <PageComponent onNavigate={setPage} />
           </div>
         </main>
       </div>

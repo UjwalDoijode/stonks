@@ -7,6 +7,7 @@ import {
   StatCard, Card, Badge, Loader, ErrorMsg,
   SkeletonCard, RiskGauge, RegimeBadge, AllocationDonut,
 } from "../components/UI";
+import TodaysSignalsWidget from "../components/TodaysSignalsWidget";
 import { fetchDashboard, aiMarketBrief } from "../api";
 import { Sparkles, RefreshCw } from "lucide-react";
 
@@ -22,7 +23,7 @@ const CHART_TOOLTIP = {
   labelStyle: { color: "#64748b", fontSize: 11 },
 };
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -87,6 +88,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ── Today's Signals Widget ── */}
+      <TodaysSignalsWidget onNavigate={onNavigate} />
 
       {/* ── AI Morning Brief ── */}
       <div className="glass-card overflow-hidden">
